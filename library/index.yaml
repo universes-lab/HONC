@@ -1,3 +1,17 @@
 # library/index.yaml — автоматически генерируется через post-commit hook
 objects:
-  []
+  - id: OBJ-001
+    type: axiom
+    title: "Пространство дискретно"
+    status: draft
+    path: library/canon/HONC/OBJ-001_axiom.md
+  - id: OBJ-002
+    type: axiom
+    title: "Время — многокомпонентное поле"
+    status: draft
+    path: library/canon/HONC/OBJ-002_axiom.md
+  - id: OBJ-003
+    type: axiom
+    title: "Вселенная вложена сама в себя"
+    status: draft
+    path: library/canon/HONC/OBJ-003_axiom.md
