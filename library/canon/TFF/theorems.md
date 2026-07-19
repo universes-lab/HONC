@@ -1,5 +1,5 @@
 ---
-id: OBJ-003
+id: TEMPLATE-003
 type: theorem
 title: "Название теоремы"
 status: draft

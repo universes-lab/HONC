@@ -1,5 +1,5 @@
 ---
-id: OBJ-001
+id: TEMPLATE-001
 type: axiom
 title: "Название аксиомы"
 status: draft

@@ -33,8 +33,7 @@ def main():
                     errors.append(f"{path}: {msg}")
     
     if errors:
-        print("
-".join(errors))
+        print("\n".join(errors))
         exit(1)
     print("All manifests are valid.")
 

@@ -15,3 +15,33 @@ objects:
     title: "Вселенная вложена сама в себя"
     status: draft
     path: library/canon/HONC/OBJ-003_axiom.md
+  - id: OBJ-010
+    type: definition
+    title: "Квантрон"
+    status: draft
+    path: library/canon/HONC/definitions/OBJ-010_kvantron.md
+  - id: OBJ-011
+    type: definition
+    title: "Латчер Qf (протофотон)"
+    status: draft
+    path: library/canon/HONC/definitions/OBJ-011_latcher_qf.md
+  - id: OBJ-012
+    type: definition
+    title: "Латчер Qν (нейтринный латчер)"
+    status: draft
+    path: library/canon/HONC/definitions/OBJ-012_latcher_qv.md
+  - id: OBJ-013
+    type: definition
+    title: "Поле времени Tμν"
+    status: draft
+    path: library/canon/HONC/definitions/OBJ-013_field_time.md
+  - id: OBJ-014
+    type: definition
+    title: "Протокварк"
+    status: draft
+    path: library/canon/HONC/definitions/OBJ-014_protokvark.md
+  - id: OBJ-015
+    type: definition
+    title: "Вложенность континуумов"
+    status: draft
+    path: library/canon/HONC/definitions/OBJ-015_hierarchy_continua.md

@@ -1,5 +1,5 @@
 ---
-id: OBJ-002
+id: TEMPLATE-002
 type: definition
 title: "Определение понятия"
 status: draft
