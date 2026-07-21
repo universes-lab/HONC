@@ -18,8 +18,8 @@ objects:
   - id: OBJ-010
     type: definition
     title: "Квантрон"
-    status: draft
-    path: library/canon/HONC/definitions/OBJ-010_kvantron.md
+    status: canon
+    path: library/canon/HONC/definitions/OBJ-010_quantron.md
   - id: OBJ-011
     type: definition
     title: "Латчер Qf (протофотон)"
@@ -38,8 +38,8 @@ objects:
   - id: OBJ-014
     type: definition
     title: "Протокварк"
-    status: draft
-    path: library/canon/HONC/definitions/OBJ-014_protokvark.md
+    status: canon
+    path: library/canon/HONC/definitions/OBJ-014_protoquark.md
   - id: OBJ-015
     type: definition
     title: "Вложенность континуумов"

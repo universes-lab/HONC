@@ -1,8 +1,10 @@
 ---
 id: OBJ-010
+status: canon
 type: definition
-title: "Квантрон"
-status: draft
+canonical_en: "Quantron"
+canonical_ru: "Квантрон"
+canonical_nl: "Quantron"
 version: 1.0
 author: "А.Туин"
 owner: author

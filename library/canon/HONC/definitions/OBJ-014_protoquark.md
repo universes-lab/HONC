@@ -1,8 +1,10 @@
 ---
 id: OBJ-014
+status: canon
 type: definition
-title: "Протокварк"
-status: draft
+canonical_en: "Protoquark"
+canonical_ru: "Протокварк"
+canonical_nl: "Protokwark"
 version: 1.0
 author: "А.Туин"
 owner: author
@@ -14,7 +16,7 @@ relations:
   defines: []
   derives_from: [OBJ-010]
   used_by: []
-tags: [protokvark, quark, topology]
+tags: [protoquark, quark, topology]
 abstract: "Квантрон типа Q₁, состоящий из 1D-кольца и 2D-сферы или тора, являющийся строительным материалом для кварков."
 ---
 # Протокварк
