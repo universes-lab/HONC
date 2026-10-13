@@ -19,6 +19,7 @@
   --q2d: #b9a37a;
   --qring: #7a5c99;
   --band: #2350a0;
+  --warn: #c0392b;
   --focus: #1b2426;
   --font-display: "PT Serif", Georgia, "Times New Roman", serif;
   --font-body: "PT Sans", "Segoe UI", Arial, sans-serif;
@@ -28,14 +29,14 @@
   :root:not([data-theme="light"]) {
     --bg: #111718; --panel: #182022; --fg: #e2e9ea; --muted: #93a3a7; --rule: #2b3739;
     --torus: #587174; --in: #5b88d6; --out: #d27a4a; --axis: #8a9a9e; --tax: #a8c25a;
-    --q2d: #b8a477; --qring: #b08fd4; --band: #5b88d6; --focus: #e2e9ea;
+    --q2d: #b8a477; --qring: #b08fd4; --band: #5b88d6; --warn: #ef6f5f; --focus: #e2e9ea;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #111718; --panel: #182022; --fg: #e2e9ea; --muted: #93a3a7; --rule: #2b3739;
   --torus: #587174; --in: #5b88d6; --out: #d27a4a; --axis: #8a9a9e; --tax: #a8c25a;
-  --q2d: #b8a477; --qring: #b08fd4; --band: #5b88d6; --focus: #e2e9ea;
+  --q2d: #b8a477; --qring: #b08fd4; --band: #5b88d6; --warn: #ef6f5f; --focus: #e2e9ea;
   color-scheme: dark;
 }
 html, body { height: 100%; }
@@ -164,6 +165,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
       <div><span class="sw dot"></span>meeting point of ring axes</div>
       <div><span class="sw tax"></span>torus axis</div>
       <div><span class="sw ldot"></span>crossing of neighbouring torus axes</div>
+      <div><span class="sw" style="background:var(--warn)"></span>quantron ring arc inside its own torus tube</div>
     </div>
 
     <div class="group">
@@ -174,6 +176,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
         <li>Torus surface area equals the sphere's, 4πR². Round tube: a = b = R/√π, outer radius 1.128 R.</li>
         <li>Ring length equals the equator, 2πR. Ring shape: ellipse.</li>
         <li>Two rings sharing a hole move together there.</li>
+        <li>Quantron torus: its ring lies on its equator, so its outer radius is R and the tube is stretched along the axis, b_z = 0.760 R.</li>
       </ol>
     </div>
 
@@ -203,7 +206,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
       { a: 71.58, t: 'Centre becomes a closed chamber' },
       { a: 72.95, t: 'Qt, Qb held' },
       { a: 73.22, t: 'Qu, Qd, Qs, Qc held' },
-      { a: 75.18, t: 'Qt, Qb no longer fit at the centre' },
+      { a: 75.17, t: 'Qt, Qb no longer fit at the centre' },
       { a: 75.94, t: 'Qu, Qd, Qs, Qc no longer fit' },
       { a: 81.07, t: 'Rings one place apart touch: four contacts per ring. Tilt cannot grow' } ] },
     4: { max: 62.67, items: [
@@ -211,9 +214,20 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
       { a: 62.67, t: 'Opposite rings meet on the axis at y = ±0.733. Tilt cannot grow' } ] },
     2: { max: 0, items: [ { a: 0, t: 'Only form: torus axes parallel and normal to the link' } ] }
   };
-  const WIN = { Qu: [73.22, 75.94], Qd: [73.22, 75.94], Qs: [73.22, 75.94], Qc: [73.22, 75.94], Qt: [72.95, 75.18], Qb: [72.95, 75.18] };
+  const WIN = { Qu: [73.22, 75.94], Qd: [73.22, 75.94], Qs: [73.22, 75.94], Qc: [73.22, 75.94], Qt: [72.95, 75.17], Qb: [72.95, 75.17] };
   const QR = { Qu: 1, Qd: 1, Qs: 1, Qc: 1, Qt: 1.009, Qb: 1.009 };
   const POCKET = 71.58;
+
+  // region swept by each quantron turning about the vertical (body of revolution: r = distance from the vertical, y = height)
+  const WSTAR = 0.5 / (1 - 0.25 / (QBZ * QBZ));
+  const inBall = (r, y) => r * r + y * y <= 1;
+  const inApple = (r, y) => ((r - 0.5) / 0.5) ** 2 + (y / QBZ) ** 2 <= 1;
+  const inSwept = (r, y) => {
+    let s = r > 1e-12 ? (WSTAR * WSTAR - y * y) / (r * r) : 0; s = Math.min(1, Math.max(0, s));
+    const w = Math.sqrt(y * y + r * r * s);
+    return ((w - 0.5) / 0.5) ** 2 + r * r * (1 - s) / (QBZ * QBZ) <= 1;
+  };
+  const SWEPT = { Qu: inBall, Qd: inBall, Qs: inApple, Qc: (r, y) => inApple(r, y) || inBall(r, y), Qt: inSwept, Qb: (r, y) => inSwept(r, y) || inBall(r, y) };
 
   // ---------- ellipse of given perimeter ----------
   function perim(p, q) {
@@ -324,13 +338,14 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     focus: new THREE.MeshBasicMaterial({}),
     lib: new THREE.MeshBasicMaterial({}),
     q2d: new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.55, roughness: 0.5, depthWrite: false, side: THREE.DoubleSide }),
-    qring: new THREE.MeshStandardMaterial({ roughness: 0.4 })
+    qring: new THREE.MeshStandardMaterial({ roughness: 0.4 }),
+    warn: new THREE.MeshBasicMaterial({})
   };
   function refreshColors() {
     mats.torus.color = col('--torus'); mats.in.color = col('--in'); mats.out.color = col('--out');
     mats.axis.color = col('--axis'); mats.tax.color = col('--tax'); mats.center.color = col('--axis');
     mats.focus.color = col('--focus'); mats.lib.color = col('--tax');
-    mats.q2d.color = col('--q2d'); mats.qring.color = col('--qring');
+    mats.q2d.color = col('--q2d'); mats.qring.color = col('--qring'); mats.warn.color = col('--warn');
     renderer.setClearColor(col('--bg'));
     if (geo) drawChart();
   }
@@ -355,19 +370,61 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
   }
 
   // ---------- quantron models (R = 1; vertical = assembly axis; whole body turns about the vertical) ----------
+  let ringCut = 0;   // share of the quantron ring that lies inside its own torus tube
   function buildQuantron(kind) {
     while (quantron.children.length) { const c = quantron.children.pop(); if (c.geometry) c.geometry.dispose(); }
+    ringCut = 0;
     if (kind === 'none' || state.N !== 8) return;
-    const body = kind === 'Qu' || kind === 'Qd'
-      ? new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), mats.q2d)
-      : new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.5, 40, 80), mats.q2d);
-    if (body.geometry.type === 'TorusGeometry') body.scale.set(1, 1, QBZ / 0.5);       // b_z = 0,760: area 4π
+    const isSphere = kind === 'Qu' || kind === 'Qd';
     const torusAxisVertical = kind === 'Qs' || kind === 'Qc';
-    if (body.geometry.type === 'TorusGeometry') body.rotation.set(torusAxisVertical ? Math.PI / 2 : 0, torusAxisVertical ? 0 : Math.PI / 2, 0);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.022, 10, 160), mats.qring);
     const ringAxisVertical = kind === 'Qd' || kind === 'Qs' || kind === 'Qt';
-    ring.rotation.set(ringAxisVertical ? Math.PI / 2 : 0, ringAxisVertical ? 0 : Math.PI / 2, 0);
-    quantron.add(body); quantron.add(ring);
+    const body = isSphere
+      ? new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), mats.q2d)
+      : new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.5, 64, 160), mats.q2d);
+    if (!isSphere) {
+      body.scale.set(1, 1, QBZ / 0.5);              // b_z = 0.760: area 4π with outer radius 1
+      body.rotation.set(torusAxisVertical ? Math.PI / 2 : 0, torusAxisVertical ? 0 : Math.PI / 2, 0);
+    }
+    quantron.add(body);
+    // ring of radius 1; arcs that run inside the torus tube are drawn in the warning colour
+    const K = 720, tAx = torusAxisVertical ? Y : V(1, 0, 0);
+    const pts = [], bad = [];
+    for (let k = 0; k <= K; k++) {
+      const t = k / K * TWO_PI;
+      const p = ringAxisVertical ? V(Math.cos(t), 0, Math.sin(t)) : V(0, Math.cos(t), Math.sin(t));
+      pts.push(p);
+      let inside = false;
+      if (!isSphere) { const z = p.dot(tAx), r = p.clone().sub(tAx.clone().multiplyScalar(z)).length(); inside = ((r - 0.5) / 0.5) ** 2 + (z / QBZ) ** 2 < 1 - 1e-9; }
+      bad.push(inside);
+    }
+    ringCut = bad.slice(0, K).filter(Boolean).length / K;
+    let start = 0;
+    for (let k = 1; k <= K; k++) {
+      if (k === K || bad[k] !== bad[start]) {
+        const seg = pts.slice(start, k + 1);
+        if (seg.length > 1) quantron.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(seg), Math.max(2, seg.length), 0.007, 8, false), bad[start] ? mats.warn : mats.qring));
+        start = k;
+      }
+    }
+  }
+
+  // how much the swept quantron could grow before it touches the cage (relative to R)
+  function quantronMargin(g, kind) {
+    const near = [];
+    g.rings.forEach(r => { for (let k = 0; k < 1200; k++) { const t = k / 1200 * TWO_PI; const p = r.C.clone().add(r.U.clone().multiplyScalar(g.e.p * Math.cos(t))).add(r.W.clone().multiplyScalar(g.e.q * Math.sin(t))); if (p.length() < 1.6) near.push(p); } });
+    g.A.forEach((A, i) => {
+      const T = g.T[i]; let e1 = T.clone().cross(V(1, 0, 0)); e1.normalize(); const e2 = T.clone().cross(e1);
+      for (let a = 0; a < 160; a++) for (let b = 0; b < 80; b++) {
+        const u = a / 160 * TWO_PI, v = b / 80 * TWO_PI, rho = TA + TA * Math.cos(v);
+        const p = A.clone().add(e1.clone().multiplyScalar(rho * Math.cos(u))).add(e2.clone().multiplyScalar(rho * Math.sin(u))).add(T.clone().multiplyScalar(TA * Math.sin(v)));
+        if (p.length() < 1.6) near.push(p);
+      }
+    });
+    const body = SWEPT[kind];
+    const hits = s => near.some(p => body(Math.hypot(p.x, p.z) / s, p.y / s));
+    let lo = 0.5, hi = 1.6;
+    for (let k = 0; k < 32; k++) { const m = (lo + hi) / 2; (hits(m) ? hi = m : lo = m); }
+    return lo - 1;
   }
 
   // ---------- state ----------
@@ -383,14 +440,14 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     const N = state.N;
     geo = build(N, state.beta);
     const g = geo, e = g.e;
-    const torusGeo = new THREE.TorusGeometry(TA, TA, 28, 72);
+    const torusGeo = new THREE.TorusGeometry(TA, TA, 64, 160);
     g.A.forEach((a, i) => { const m = new THREE.Mesh(torusGeo, mats.torus); m.position.copy(a); m.quaternion.copy(qFromZ(g.T[i])); group.add(m); });
-    const coneGeo = new THREE.ConeGeometry(0.05, 0.15, 12);
+    const coneGeo = new THREE.ConeGeometry(0.03, 0.1, 12);
     g.rings.forEach((r, i) => {
       const mDir = r.n.clone().multiplyScalar(g.Om[i]), toF = r.F.clone().sub(r.C);
       const mat = (N === 2 || mDir.dot(toF) > 0) ? mats.in : mats.out;
-      const shift = N === 2 ? r.n.clone().multiplyScalar(i === 0 ? 0.03 : -0.03) : null;   // coincident Z rings drawn apart
-      group.add(new THREE.Mesh(new THREE.TubeGeometry(ellipseCurve(r, e, shift), 240, 0.024, 8, true), mat));
+      const shift = N === 2 ? r.n.clone().multiplyScalar(i === 0 ? 0.015 : -0.015) : null;   // coincident Z rings drawn apart
+      group.add(new THREE.Mesh(new THREE.TubeGeometry(ellipseCurve(r, e, shift), 480, 0.007, 8, true), mat));
       for (let k = 0; k < 3; k++) {
         const cone = new THREE.Mesh(coneGeo, mat); group.add(cone);
         arrows.push({ cone, r, shift, th: g.tStart + (k + 0.5) * TWO_PI / 3 + (N === 2 && i === 1 ? 0.5 : 0), om: g.Om[i] });
@@ -457,14 +514,17 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     }
     const [lo, hi] = WIN[q];
     const s = b < lo ? '<strong>Leaves along the axis.</strong>' : b <= hi ? '<strong>Held.</strong>' : '<strong>Does not fit at the centre.</strong>';
-    el.innerHTML = s + ' ' + q + ' is held from ' + fmt(lo, 2) + '° to ' + fmt(hi, 2) + '°.';
+    const m = quantronMargin(geo, q);
+    const margin = m >= 0 ? ' It could grow by ' + fmt(100 * m, 1) + ' % before touching the cage.' : ' It would have to shrink by ' + fmt(-100 * m, 1) + ' % to fit.';
+    const cut = ringCut > 0 ? ' <strong>Conflict:</strong> its ring of radius 1 runs inside its own torus tube on ' + fmt(100 * ringCut, 1) + ' % of its length, up to 40.2° from the torus equator.' : '';
+    el.innerHTML = s + ' ' + q + ' is held from ' + fmt(lo, 2) + '° to ' + fmt(hi, 2) + '°.' + margin + cut;
   }
 
   function noteText() {
     const N = state.N;
     if (N === 2) return 'Z. Each latcher\'s ring threads both holes. With elliptical rings both torus axes must be parallel and normal to the link, so Z has no tilt: d = 2.257, ring 1.128 × 0.863. The two rings coincide; here they are drawn one tube width apart. They circulate in the same sense; the tori turn against each other at their contact.';
     if (N === 4) return 'W. No quantron fits inside: the free radius at the centre is at most 0.467. At 62.67° the rings across the square meet on the axis, at y = −0.733 and +0.733, and close it.';
-    return 'Gluon ring. Tilting the tori pulls the ring in. From 71.58° four rings above and four below lean over the axis and pinch it at about y = ±0.75: the centre becomes a closed chamber. At 81.07° each ring touches the rings one place away.';
+    return 'Gluon ring. Tilting the tori pulls the ring in. From 71.58° four rings above and four below lean over the axis and pinch it at about y = ±0.75: the centre becomes a closed chamber. Capture was checked by a full 3D search over positions for each quantron: when a quantron can leave, it leaves along the axis. At 81.07° each ring touches the rings one place away.';
   }
 
   // ---------- key-angle scale ----------
