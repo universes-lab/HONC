@@ -100,7 +100,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
   <aside class="panel">
     <div class="group">
       <h1>Geometry of Latched λ-Molecules</h1>
-      <p class="lede">Closed chains of Qf latchers: horn tori threaded by rings through their point holes. Lengths in units of the quantum radius R.</p>
+      <p class="lede">Closed chains of Qf latchers. Each latcher is a quantron whose torus is shifted by R from its ring, so the ring threads the torus point hole. Lengths in units of the quantum radius R.</p>
     </div>
 
     <div class="group">
@@ -115,8 +115,8 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     <div class="group" id="tiltGroup">
       <label for="tilt"><h2>Torus tilt β</h2></label>
       <div class="slider-row">
-        <input id="tilt" type="range" min="0" max="81.07" step="0.01" value="74.2">
-        <span class="val" id="tiltVal">74.20°</span>
+        <input id="tilt" type="range" min="0" max="71.28" step="0.01" value="65">
+        <span class="val" id="tiltVal">65.00°</span>
       </div>
       <svg class="scale" id="scale" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"></svg>
       <div class="keys" id="keys"></div>
@@ -125,8 +125,8 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     <div class="group" id="qGroup">
       <h2>Quantron at the centre</h2>
       <div class="seg q" role="group" aria-label="Quantron at the centre">
-        <button type="button" data-q="none" aria-pressed="true">none</button>
-        <button type="button" data-q="Qu" aria-pressed="false">Qu</button>
+        <button type="button" data-q="none" aria-pressed="false">none</button>
+        <button type="button" data-q="Qu" aria-pressed="true">Qu</button>
         <button type="button" data-q="Qd" aria-pressed="false">Qd</button>
         <button type="button" data-q="Qs" aria-pressed="false">Qs</button>
         <button type="button" data-q="Qc" aria-pressed="false">Qc</button>
@@ -137,7 +137,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     </div>
 
     <div class="group">
-      <h2 id="chartTitle">Free radius along the assembly axis</h2>
+      <h2>Free radius along the assembly axis</h2>
       <svg class="chart" id="chart" viewBox="0 0 340 170" role="img" aria-label="Free radius along the assembly axis"></svg>
     </div>
 
@@ -151,7 +151,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
       <dt>Link d (between neighbouring torus centres)</dt><dd id="rD">—</dd>
       <dt>Radius of the torus-centre circle</dt><dd id="rRc">—</dd>
       <dt>Ring semi-axes: along the link / across</dt><dd id="rPQ">—</dd>
-      <dt>Ring curvature radius in the hole (≥ 0.564)</dt><dd id="rCurv">—</dd>
+      <dt>Ring curvature radius in the hole (≥ 0.5)</dt><dd id="rCurv">—</dd>
       <dt>Ring axes meet the assembly axis at</dt><dd id="rFocus">—</dd>
       <dt>Torus axes cross</dt><dd id="rLib">—</dd>
       <dt>Free radius at the centre</dt><dd id="rC0">—</dd>
@@ -165,7 +165,6 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
       <div><span class="sw dot"></span>meeting point of ring axes</div>
       <div><span class="sw tax"></span>torus axis</div>
       <div><span class="sw ldot"></span>crossing of neighbouring torus axes</div>
-      <div><span class="sw" style="background:var(--warn)"></span>quantron ring arc inside its own torus tube</div>
     </div>
 
     <div class="group">
@@ -173,10 +172,9 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
       <ol class="rules">
         <li>Each ring passes through the point hole of its torus along the torus axis.</li>
         <li>Tori never overlap; neighbouring tori touch.</li>
-        <li>Torus surface area equals the sphere's, 4πR². Round tube: a = b = R/√π, outer radius 1.128 R.</li>
-        <li>Ring length equals the equator, 2πR. Ring shape: ellipse.</li>
+        <li>One torus for quantron and latcher: horn, round tube, outer radius R (a = b = R/2). Its area is π²R², π/4 of the sphere's: the same 2D held in a smaller, denser surface.</li>
+        <li>Ring length equals the equator, 2πR. Ring shape: planar ellipse.</li>
         <li>Two rings sharing a hole move together there.</li>
-        <li>Quantron torus: its ring lies on its equator, so its outer radius is R and the tube is stretched along the axis, b_z = 0.760 R.</li>
       </ol>
     </div>
 
@@ -193,68 +191,78 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
   const rhat = p => V(Math.cos(p), 0, Math.sin(p));
   const that = p => V(-Math.sin(p), 0, Math.cos(p));
   const fmt = (x, d = 3) => x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-  const rad = d => d * Math.PI / 180;
+  const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TWO_PI = 2 * Math.PI;
-  const TA = 1 / Math.sqrt(Math.PI);        // latcher torus: a = b, area 4π
-  const QBZ = 0.75981;                      // Q1 torus: outer radius 1, b_r = 0.5, area 4π → b_z
+  const A0 = 0.5, BR = 0.5, BZ = 0.5;          // one torus for quantrons and latchers: horn, round tube, outer radius 1
 
-  // ---------- key forms (computed offline with the same rules) ----------
+  // ---------- key forms (same rules, computed offline; capture checked by a full 3D search over positions) ----------
   const KEYS = {
-    8: { max: 81.07, items: [
-      { a: 0, t: 'Flat chain: torus axes parallel, one meeting point of ring axes' },
-      { a: 71.58, t: 'Centre becomes a closed chamber' },
-      { a: 72.95, t: 'Qt, Qb held' },
-      { a: 73.22, t: 'Qu, Qd, Qs, Qc held' },
-      { a: 75.17, t: 'Qt, Qb no longer fit at the centre' },
-      { a: 75.94, t: 'Qu, Qd, Qs, Qc no longer fit' },
-      { a: 81.07, t: 'Rings one place apart touch: four contacts per ring. Tilt cannot grow' } ] },
-    4: { max: 62.67, items: [
+    8: { max: 71.28, items: [
+      { a: 0, t: 'Flat ring: torus axes parallel, ring axes meet at the centre' },
+      { a: 61.56, t: 'Centre becomes a closed chamber' },
+      { a: 63.49, t: 'All six quantrons held' },
+      { a: 66.54, t: 'Quantrons no longer fit at the centre' },
+      { a: 71.28, t: 'Rings one place apart touch: four contacts per ring. Tilt cannot grow' } ] },
+    4: { max: 50.65, items: [
       { a: 0, t: 'Flat square: torus axes parallel' },
-      { a: 62.67, t: 'Opposite rings meet on the axis at y = ±0.733. Tilt cannot grow' } ] },
-    2: { max: 0, items: [ { a: 0, t: 'Only form: torus axes parallel and normal to the link' } ] }
+      { a: 50.65, t: 'Opposite rings meet on the axis at y = ±1.065. Tilt cannot grow' } ] },
+    2: { max: 0, items: [ { a: 0, t: 'Only form: each ring is the ⊥-quantron ring, a circle of radius R, with the torus shifted by R; the partner torus fills the vacated half' } ] }
   };
-  const WIN = { Qu: [73.22, 75.94], Qd: [73.22, 75.94], Qs: [73.22, 75.94], Qc: [73.22, 75.94], Qt: [72.95, 75.17], Qb: [72.95, 75.17] };
-  const QR = { Qu: 1, Qd: 1, Qs: 1, Qc: 1, Qt: 1.009, Qb: 1.009 };
-  const POCKET = 71.58;
+  const WIN = [63.49, 66.54], POCKET = 61.56;
 
-  // region swept by each quantron turning about the vertical (body of revolution: r = distance from the vertical, y = height)
-  const WSTAR = 0.5 / (1 - 0.25 / (QBZ * QBZ));
-  const inBall = (r, y) => r * r + y * y <= 1;
-  const inApple = (r, y) => ((r - 0.5) / 0.5) ** 2 + (y / QBZ) ** 2 <= 1;
-  const inSwept = (r, y) => {
-    let s = r > 1e-12 ? (WSTAR * WSTAR - y * y) / (r * r) : 0; s = Math.min(1, Math.max(0, s));
-    const w = Math.sqrt(y * y + r * r * s);
-    return ((w - 0.5) / 0.5) ** 2 + r * r * (1 - s) / (QBZ * QBZ) <= 1;
-  };
-  const SWEPT = { Qu: inBall, Qd: inBall, Qs: inApple, Qc: (r, y) => inApple(r, y) || inBall(r, y), Qt: inSwept, Qb: (r, y) => inSwept(r, y) || inBall(r, y) };
-
-  // ---------- ellipse of given perimeter ----------
-  function perim(p, q) {
-    const a = Math.max(p, q), b = Math.min(p, q), h = ((a - b) / (a + b)) ** 2;
-    return Math.PI * (a + b) * (1 + 3 * h / (10 + Math.sqrt(4 - 3 * h)));
-  }
-  function solveEllipse(c, cosg, L) {
+  // ---------- planar ring: ellipse of length 2πR through both holes, tangent to both torus axes ----------
+  function perim(p, q) { const a = Math.max(p, q), b = Math.min(p, q), h = ((a - b) / (a + b)) ** 2; return Math.PI * (a + b) * (1 + 3 * h / (10 + Math.sqrt(4 - 3 * h))); }
+  function ring2D(c, cosg) {
+    let p, q, y0;
     if (cosg < 1e-6) {
-      let lo = 1e-6, hi = 10;
-      for (let k = 0; k < 90; k++) { const m = (lo + hi) / 2; (perim(c, m) < L ? lo = m : hi = m); }
-      return { p: c, q: (lo + hi) / 2, y0: 0 };
+      p = c; let lo = 1e-6, hi = 10;
+      for (let k = 0; k < 90; k++) { const m = (lo + hi) / 2; (perim(c, m) < TWO_PI ? lo = m : hi = m); }
+      q = (lo + hi) / 2; y0 = 0;
+    } else {
+      const tg = Math.sqrt(1 - cosg * cosg) / cosg, qOf = pp => tg * pp * Math.sqrt(Math.max(pp * pp / (c * c) - 1, 0));
+      let lo = c * (1 + 1e-12), hi = c * 60;
+      for (let k = 0; k < 120; k++) { const m = (lo + hi) / 2; (perim(m, qOf(m)) < TWO_PI ? lo = m : hi = m); }
+      p = (lo + hi) / 2; q = qOf(p); y0 = c * q * q / (tg * p * p);
     }
-    const tg = Math.sqrt(1 - cosg * cosg) / cosg;
-    const qOf = p => tg * p * Math.sqrt(Math.max(p * p / (c * c) - 1, 0));
-    let lo = c * (1 + 1e-12), hi = c * 60;
-    for (let k = 0; k < 120; k++) { const m = (lo + hi) / 2; (perim(m, qOf(m)) < L ? lo = m : hi = m); }
-    const p = (lo + hi) / 2, q = qOf(p);
-    return { p, q, y0: c * q * q / (tg * p * p) };
+    const norm = t => ((t % TWO_PI) + TWO_PI) % TWO_PI;
+    const ts = Array.from({ length: 720 }, (_, k) => k / 720 * TWO_PI)
+      .concat([norm(Math.atan2(y0 / q, -c / p)), norm(Math.atan2(y0 / q, c / p))])     // the two holes exactly
+      .sort((a, b) => a - b);
+    const H = ts.map(t => [p * Math.cos(t), -y0 + q * Math.sin(t)]);
+    const ct = -c / p, st = y0 / q;                 // the hole (−c, 0) on the ellipse
+    const rcurv = Math.pow(p * p * st * st + q * q * ct * ct, 1.5) / (p * q);
+    return { H, p, q, y0, cen: [0, -y0], rcurv };
+  }
+  // dense closed polyline with arc-length lookup
+  function densify(P, step) {
+    const out = [];
+    for (let i = 0; i < P.length; i++) {
+      const a = P[i], b = P[(i + 1) % P.length], n = Math.max(1, Math.ceil(a.distanceTo(b) / step));
+      for (let k = 0; k < n; k++) out.push(a.clone().lerp(b, k / n));
+    }
+    const cum = [0];
+    for (let i = 1; i <= out.length; i++) cum.push(cum[i - 1] + out[i - 1].distanceTo(out[i % out.length]));
+    return { pts: out, cum, L: cum[cum.length - 1] };
+  }
+  function atLength(R, l) {
+    l = ((l % R.L) + R.L) % R.L;
+    let lo = 0, hi = R.cum.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; (R.cum[m] <= l ? lo = m : hi = m); }
+    const a = R.pts[lo], b = R.pts[(lo + 1) % R.pts.length], f = (l - R.cum[lo]) / (R.cum[lo + 1] - R.cum[lo]);
+    return { p: a.clone().lerp(b, f), t: b.clone().sub(a).normalize() };
+  }
+  class PolyCurve extends THREE.Curve {
+    constructor(R, shift) { super(); this.R = R; this.shift = shift; }
+    getPoint(t, target = new THREE.Vector3()) { const q = atLength(this.R, t * this.R.L).p; if (this.shift) q.add(this.shift); return target.copy(q); }
   }
 
-  // ---------- chain geometry ----------
+  // ---------- chain ----------
+  function support(upar) { const S = Math.sqrt(1 - upar * upar); return A0 * S + Math.sqrt(BR * BR * S * S + BZ * BZ * upar * upar); }
   function build(N, betaDeg) {
     const dl = Math.PI / N, beta = N === 2 ? 0 : rad(betaDeg);
-    const upar = Math.sin(beta) * Math.cos(dl), S = Math.sqrt(1 - upar * upar);
-    const d = 2 * (TA * S + TA);                 // touching tori: twice the extent along the link
-    const c = d / 2, Rc = c / Math.sin(dl), cosg = upar;
-    const e = solveEllipse(c, cosg, TWO_PI);
+    const cosg = Math.sin(beta) * Math.cos(dl), d = 2 * support(cosg), c = d / 2, Rc = c / Math.sin(dl);
+    const r2 = ring2D(c, cosg);
     const A = [], T = [];
     for (let i = 0; i < N; i++) {
       const phi = 2 * dl * i, s = i % 2 === 0 ? 1 : -1;
@@ -263,54 +271,57 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     }
     const rings = [];
     for (let i = 0; i < N; i++) {
-      const pm = 2 * dl * i + dl, M = rhat(pm).multiplyScalar(Rc * Math.cos(dl));
-      const u = that(pm), w = T[i].clone().add(T[(i + 1) % N]).normalize();
-      let best = null;
-      for (const sg of [1, -1]) {
-        const W = w.clone().multiplyScalar(sg), C = M.clone().add(W.clone().multiplyScalar(e.y0));
-        const ct = -c / e.p, st = -e.y0 / e.q;
-        const tan = u.clone().multiplyScalar(-e.p * st).add(W.clone().multiplyScalar(e.q * ct)).normalize();
-        const err = 1 - Math.abs(tan.dot(T[i]));
-        if (!best || err < best.err) best = { err, W, C };
-      }
-      const n = u.clone().cross(best.W).normalize();
-      const tanG = cosg > 1e-6 ? Math.sqrt(1 - cosg * cosg) / cosg : Infinity;
-      const P = isFinite(tanG) ? M.clone().sub(best.W.clone().multiplyScalar(c * tanG)) : null;
-      rings.push({ C: best.C, U: u, W: best.W, n, P });
+      const pm = 2 * dl * i + dl, M = rhat(pm).multiplyScalar(Rc * Math.cos(dl)), u = that(pm);
+      const w = T[i].clone().add(T[(i + 1) % N]).normalize();
+      const W = (Math.sign(T[i].dot(u)) === Math.sign(cosg) || cosg < 1e-12) ? w : w.clone().negate();
+      const map = p => M.clone().add(u.clone().multiplyScalar(p[0])).add(W.clone().multiplyScalar(p[1]));
+      const R = densify(r2.H.map(map), 0.01);
+      const C = map(r2.cen), n = u.clone().cross(W).normalize();
+      const P = cosg > 1e-6 ? map([0, c * Math.sqrt(1 - cosg * cosg) / cosg]) : null;
+      rings.push({ M, u, W, R, C, n, P });
     }
-    const tanAt = (r, t) => r.U.clone().multiplyScalar(-e.p * Math.sin(t)).add(r.W.clone().multiplyScalar(e.q * Math.cos(t)));
-    const tStart = Math.atan2(-e.y0 / e.q, -c / e.p), tEnd = Math.atan2(-e.y0 / e.q, c / e.p);
+    // circulation senses: rings sharing a hole move together there
+    const tanAt = (r, X) => { let best = 0, bd = Infinity; r.R.pts.forEach((p, k) => { const dd = p.distanceToSquared(X); if (dd < bd) { bd = dd; best = k; } }); return atLength(r.R, r.R.cum[best]).t; };
     const Om = [1];
-    for (let i = 1; i < N; i++) Om.push(Math.sign(tanAt(rings[i - 1], tEnd).multiplyScalar(Om[i - 1]).dot(tanAt(rings[i], tStart))) || 1);
+    for (let i = 1; i < N; i++) Om.push(Math.sign(tanAt(rings[i - 1], A[i]).multiplyScalar(Om[i - 1]).dot(tanAt(rings[i], A[i]))) || 1);
     rings.forEach(r => {
-      const dh = Math.hypot(r.n.x, r.n.z);
-      if (dh < 1e-9 || Math.hypot(r.C.x, r.C.z) < 1e-9) { r.F = V(0, r.C.y, 0); return; }
+      if (Math.hypot(r.C.x, r.C.z) < 1e-9 || Math.hypot(r.n.x, r.n.z) < 1e-9) { r.F = V(0, r.C.y, 0); return; }
       const s = -(r.C.x * r.n.x + r.C.z * r.n.z) / (r.n.x * r.n.x + r.n.z * r.n.z);
       r.F = r.C.clone().add(r.n.clone().multiplyScalar(s));
     });
-    const ct = -c / e.p, st = -e.y0 / e.q;
-    const rcurv = Math.pow(e.p * e.p * st * st + e.q * e.q * ct * ct, 1.5) / (e.p * e.q);
     const libDist = cosg > 1e-6 ? c / cosg : Infinity;
-    return { N, beta, d, c, Rc, e, A, T, rings, Om, tStart, rcurv, libDist, cosg };
+    return { N, beta, d, c, Rc, cosg, r2, A, T, rings, Om, libDist };
   }
 
-  // free radius along the assembly axis: distance to the nearest torus or ring
+  // ---------- distances to the cage ----------
+  const SEC = Array.from({ length: 360 }, (_, k) => { const t = k / 360 * TWO_PI; return [A0 + BR * Math.cos(t), BZ * Math.sin(t)]; });
+  function torusDist(X, A, T) {
+    const r = X.clone().sub(A), z = r.dot(T), rho = r.clone().sub(T.clone().multiplyScalar(z)).length();
+    if (((rho - A0) / BR) ** 2 + (z / BZ) ** 2 < 1) return 0;
+    let m = Infinity; for (const q of SEC) m = Math.min(m, Math.hypot(rho - q[0], z - q[1])); return m;
+  }
   function axialProfile(g, ys) {
-    const K = 900, pts = [];
-    g.rings.forEach(r => { for (let k = 0; k < K; k++) { const t = k / K * TWO_PI; pts.push(r.C.clone().add(r.U.clone().multiplyScalar(g.e.p * Math.cos(t))).add(r.W.clone().multiplyScalar(g.e.q * Math.sin(t)))); } });
-    const px = Float64Array.from(pts, p => p.x), py = Float64Array.from(pts, p => p.y), pz = Float64Array.from(pts, p => p.z);
+    const pts = []; g.rings.forEach(r => r.R.pts.forEach(p => pts.push(p)));
     return ys.map(y => {
-      let f = Infinity;
-      for (let i = 0; i < g.A.length; i++) {
-        const A = g.A[i], T = g.T[i];
-        const rx = -A.x, ry = y - A.y, rz = -A.z, z = rx * T.x + ry * T.y + rz * T.z;
-        const rho = Math.hypot(rx - z * T.x, ry - z * T.y, rz - z * T.z);
-        f = Math.min(f, Math.hypot(rho - TA, z) - TA);
-      }
-      for (let k = 0; k < px.length; k++) { const dd = px[k] * px[k] + (py[k] - y) ** 2 + pz[k] * pz[k]; if (dd < f * f) f = Math.sqrt(dd); }
-      return Math.max(f, 0);
+      const X = V(0, y, 0); let f = Infinity;
+      g.A.forEach((A, i) => { f = Math.min(f, torusDist(X, A, g.T[i])); });
+      for (const p of pts) { const dd = p.x * p.x + (p.y - y) ** 2 + p.z * p.z; if (dd < f * f) f = Math.sqrt(dd); }
+      return f;
     });
   }
+
+  // ---------- quantrons (vertical = assembly axis; the whole body turns about the vertical) ----------
+  // The round horn torus of outer radius R lies inside the unit sphere, and a torus or ring turning about an axis across it sweeps the whole
+  // unit ball. So Qu, Qd, Qc, Qt, Qb all occupy the unit ball; Qs (torus and ring along the vertical) occupies only its torus.
+  const inBall = (r, y) => r * r + y * y <= 1;
+  const inTorus = (r, y) => (r - 0.5) ** 2 + y * y <= 0.25;
+  const SWEPT = { Qu: inBall, Qd: inBall, Qc: inBall, Qt: inBall, Qb: inBall, Qs: inTorus };
+  const QINFO = {
+    Qu: 'sphere; ring across the vertical', Qd: 'sphere; ring along the vertical',
+    Qs: 'torus and ring both along the vertical; it occupies only its torus',
+    Qc: 'torus along the vertical, ring across it', Qt: 'torus across the vertical, ring along it',
+    Qb: 'torus and ring both across the vertical'
+  };
 
   // ---------- scene ----------
   const stage = document.getElementById('stage');
@@ -338,14 +349,14 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     focus: new THREE.MeshBasicMaterial({}),
     lib: new THREE.MeshBasicMaterial({}),
     q2d: new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.55, roughness: 0.5, depthWrite: false, side: THREE.DoubleSide }),
-    qring: new THREE.MeshStandardMaterial({ roughness: 0.4 }),
-    warn: new THREE.MeshBasicMaterial({})
+    qring: new THREE.MeshStandardMaterial({ roughness: 0.4 })
   };
+  let geo = null;
   function refreshColors() {
     mats.torus.color = col('--torus'); mats.in.color = col('--in'); mats.out.color = col('--out');
     mats.axis.color = col('--axis'); mats.tax.color = col('--tax'); mats.center.color = col('--axis');
     mats.focus.color = col('--focus'); mats.lib.color = col('--tax');
-    mats.q2d.color = col('--q2d'); mats.qring.color = col('--qring'); mats.warn.color = col('--warn');
+    mats.q2d.color = col('--q2d'); mats.qring.color = col('--qring');
     renderer.setClearColor(col('--bg'));
     if (geo) drawChart();
   }
@@ -358,80 +369,52 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     if (mat.isLineDashedMaterial) l.computeLineDistances();
     return l;
   }
-  function ellipseCurve(r, e, shift) {
-    const pts = [];
-    for (let k = 0; k <= 240; k++) {
-      const t = k / 240 * TWO_PI;
-      const p = r.C.clone().add(r.U.clone().multiplyScalar(e.p * Math.cos(t))).add(r.W.clone().multiplyScalar(e.q * Math.sin(t)));
-      if (shift) p.add(shift);
-      pts.push(p);
-    }
-    return new THREE.CatmullRomCurve3(pts, true);
+  function torusMesh(mat) {
+    const m = new THREE.Mesh(new THREE.TorusGeometry(A0, BR, 64, 160), mat);
+    return m;
   }
 
-  // ---------- quantron models (R = 1; vertical = assembly axis; whole body turns about the vertical) ----------
-  let ringCut = 0;   // share of the quantron ring that lies inside its own torus tube
   function buildQuantron(kind) {
-    while (quantron.children.length) { const c = quantron.children.pop(); if (c.geometry) c.geometry.dispose(); }
-    ringCut = 0;
+    while (quantron.children.length) { const c = quantron.children.pop(); c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     if (kind === 'none' || state.N !== 8) return;
     const isSphere = kind === 'Qu' || kind === 'Qd';
-    const torusAxisVertical = kind === 'Qs' || kind === 'Qc';
-    const ringAxisVertical = kind === 'Qd' || kind === 'Qs' || kind === 'Qt';
-    const body = isSphere
-      ? new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), mats.q2d)
-      : new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.5, 64, 160), mats.q2d);
-    if (!isSphere) {
-      body.scale.set(1, 1, QBZ / 0.5);              // b_z = 0.760: area 4π with outer radius 1
-      body.rotation.set(torusAxisVertical ? Math.PI / 2 : 0, torusAxisVertical ? 0 : Math.PI / 2, 0);
+    const torusVertical = kind === 'Qs' || kind === 'Qc';
+    if (isSphere) quantron.add(new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), mats.q2d));
+    else {
+      const holder = new THREE.Group(), t = torusMesh(mats.q2d);
+      holder.add(t);
+      holder.quaternion.copy(qFromZ(torusVertical ? Y : V(1, 0, 0)));
+      quantron.add(holder);
     }
-    quantron.add(body);
-    // ring of radius 1; arcs that run inside the torus tube are drawn in the warning colour
-    const K = 720, tAx = torusAxisVertical ? Y : V(1, 0, 0);
-    const pts = [], bad = [];
-    for (let k = 0; k <= K; k++) {
-      const t = k / K * TWO_PI;
-      const p = ringAxisVertical ? V(Math.cos(t), 0, Math.sin(t)) : V(0, Math.cos(t), Math.sin(t));
-      pts.push(p);
-      let inside = false;
-      if (!isSphere) { const z = p.dot(tAx), r = p.clone().sub(tAx.clone().multiplyScalar(z)).length(); inside = ((r - 0.5) / 0.5) ** 2 + (z / QBZ) ** 2 < 1 - 1e-9; }
-      bad.push(inside);
-    }
-    ringCut = bad.slice(0, K).filter(Boolean).length / K;
-    let start = 0;
-    for (let k = 1; k <= K; k++) {
-      if (k === K || bad[k] !== bad[start]) {
-        const seg = pts.slice(start, k + 1);
-        if (seg.length > 1) quantron.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(seg), Math.max(2, seg.length), 0.007, 8, false), bad[start] ? mats.warn : mats.qring));
-        start = k;
-      }
-    }
+    const ringVertical = kind === 'Qd' || kind === 'Qs' || kind === 'Qt';          // ring axis along the vertical: horizontal circle
+    const pts = Array.from({ length: 720 }, (_, k) => { const t = k / 720 * TWO_PI; return ringVertical ? V(Math.cos(t), 0, Math.sin(t)) : V(0, Math.cos(t), Math.sin(t)); });
+    const R = densify(pts, 0.01);
+    quantron.add(new THREE.Mesh(new THREE.TubeGeometry(new PolyCurve(R), 720, 0.007, 8, true), mats.qring));
   }
 
-  // how much the swept quantron could grow before it touches the cage (relative to R)
+  // how much the swept quantron could grow before it touches the cage
   function quantronMargin(g, kind) {
     const near = [];
-    g.rings.forEach(r => { for (let k = 0; k < 1200; k++) { const t = k / 1200 * TWO_PI; const p = r.C.clone().add(r.U.clone().multiplyScalar(g.e.p * Math.cos(t))).add(r.W.clone().multiplyScalar(g.e.q * Math.sin(t))); if (p.length() < 1.6) near.push(p); } });
+    g.rings.forEach(r => r.R.pts.forEach(p => { if (p.length() < 1.7) near.push(p); }));
     g.A.forEach((A, i) => {
-      const T = g.T[i]; let e1 = T.clone().cross(V(1, 0, 0)); e1.normalize(); const e2 = T.clone().cross(e1);
+      const T = g.T[i]; const e1 = T.clone().cross(V(1, 0, 0)).normalize(), e2 = T.clone().cross(e1);
       for (let a = 0; a < 160; a++) for (let b = 0; b < 80; b++) {
-        const u = a / 160 * TWO_PI, v = b / 80 * TWO_PI, rho = TA + TA * Math.cos(v);
-        const p = A.clone().add(e1.clone().multiplyScalar(rho * Math.cos(u))).add(e2.clone().multiplyScalar(rho * Math.sin(u))).add(T.clone().multiplyScalar(TA * Math.sin(v)));
-        if (p.length() < 1.6) near.push(p);
+        const u = a / 160 * TWO_PI, v = b / 80 * TWO_PI, rho = A0 + BR * Math.cos(v);
+        const p = A.clone().add(e1.clone().multiplyScalar(rho * Math.cos(u))).add(e2.clone().multiplyScalar(rho * Math.sin(u))).add(T.clone().multiplyScalar(BZ * Math.sin(v)));
+        if (p.length() < 1.7) near.push(p);
       }
     });
-    const body = SWEPT[kind];
-    const hits = s => near.some(p => body(Math.hypot(p.x, p.z) / s, p.y / s));
-    let lo = 0.5, hi = 1.6;
+    const body = SWEPT[kind], hits = s => near.some(p => body(Math.hypot(p.x, p.z) / s, p.y / s));
+    let lo = 0.5, hi = 1.7;
     for (let k = 0; k < 32; k++) { const m = (lo + hi) / 2; (hits(m) ? hi = m : lo = m); }
     return lo - 1;
   }
 
   // ---------- state ----------
-  const state = { N: 8, beta: 74.2, q: 'Qu', ringAx: true, torAx: true, spin: !reduceMotion };
+  const state = { N: 8, beta: 65, q: 'Qu', ringAx: true, torAx: true, spin: !reduceMotion };
   document.getElementById('spin').checked = state.spin;
   const LIB_DRAW = 4.6;
-  let arrows = [], geo = null, prof = null, lastN = null;
+  let arrows = [], prof = null, lastN = null;
   const YS = Array.from({ length: 301 }, (_, i) => -3 + i * 0.02);
 
   function rebuild() {
@@ -439,19 +422,15 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     group = new THREE.Group(); scene.add(group); arrows = [];
     const N = state.N;
     geo = build(N, state.beta);
-    const g = geo, e = g.e;
-    const torusGeo = new THREE.TorusGeometry(TA, TA, 64, 160);
-    g.A.forEach((a, i) => { const m = new THREE.Mesh(torusGeo, mats.torus); m.position.copy(a); m.quaternion.copy(qFromZ(g.T[i])); group.add(m); });
+    const g = geo;
+    g.A.forEach((a, i) => { const holder = new THREE.Group(); holder.add(torusMesh(mats.torus)); holder.position.copy(a); holder.quaternion.copy(qFromZ(g.T[i])); group.add(holder); });
     const coneGeo = new THREE.ConeGeometry(0.03, 0.1, 12);
     g.rings.forEach((r, i) => {
       const mDir = r.n.clone().multiplyScalar(g.Om[i]), toF = r.F.clone().sub(r.C);
       const mat = (N === 2 || mDir.dot(toF) > 0) ? mats.in : mats.out;
       const shift = N === 2 ? r.n.clone().multiplyScalar(i === 0 ? 0.015 : -0.015) : null;   // coincident Z rings drawn apart
-      group.add(new THREE.Mesh(new THREE.TubeGeometry(ellipseCurve(r, e, shift), 480, 0.007, 8, true), mat));
-      for (let k = 0; k < 3; k++) {
-        const cone = new THREE.Mesh(coneGeo, mat); group.add(cone);
-        arrows.push({ cone, r, shift, th: g.tStart + (k + 0.5) * TWO_PI / 3 + (N === 2 && i === 1 ? 0.5 : 0), om: g.Om[i] });
-      }
+      group.add(new THREE.Mesh(new THREE.TubeGeometry(new PolyCurve(r.R, shift), 720, 0.007, 8, true), mat));
+      for (let k = 0; k < 3; k++) { const cone = new THREE.Mesh(coneGeo, mat); group.add(cone); arrows.push({ cone, r, shift, l0: (k + 0.5 + (N === 2 && i === 1 ? 0.25 : 0)) / 3 * r.R.L, om: g.Om[i] }); }
       if (state.ringAx && N > 2) {
         const dir = toF.length() > 1e-6 ? toF.clone().normalize() : r.n.clone();
         group.add(line([r.C.clone().sub(dir.clone().multiplyScalar(0.6)), r.F.clone().add(dir.clone().multiplyScalar(0.8))], mats.axis));
@@ -488,43 +467,42 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     setText('tiltVal', fmt(N === 2 ? 0 : state.beta, 2) + '°');
     setText('rD', fmt(g.d));
     setText('rRc', fmt(g.Rc));
-    setText('rPQ', fmt(g.e.p) + ' / ' + fmt(g.e.q));
-    setText('rCurv', fmt(g.rcurv));
+    setText('rPQ', fmt(g.r2.p) + ' / ' + fmt(g.r2.q));
+    setText('rCurv', fmt(g.r2.rcurv));
     const yF = g.rings[0].F.y;
     setText('rFocus', N === 2 ? 'ring centre' : (Math.abs(yF) < 5e-4 ? 'one point, centre' : 'two points, y = ±' + fmt(Math.abs(yF))));
-    if (!isFinite(g.libDist)) setText('rLib', 'axes parallel');
+    if (!isFinite(g.libDist) || N === 2) setText('rLib', 'axes parallel');
     else { const P = g.rings[0].P; setText('rLib', '±' + fmt(g.libDist, 2) + ' along each axis; y = ±' + fmt(Math.abs(P.y), 2) + ', ρ = ' + fmt(Math.hypot(P.x, P.z), 2)); }
     const nk = neckOf();
     setText('rC0', fmt(nk.c0));
     setText('rNeck', nk.m < nk.c0 - 1e-3 ? fmt(nk.m) + ' at y = ±' + fmt(Math.abs(nk.ym), 2) : 'the centre itself');
     document.querySelectorAll('.key').forEach(k => k.setAttribute('aria-current', Math.abs(parseFloat(k.dataset.a) - state.beta) < 0.005 ? 'true' : 'false'));
     document.getElementById('qGroup').hidden = N !== 8;
-    document.getElementById('tiltGroup').querySelector('input').disabled = N === 2;
+    document.getElementById('tilt').disabled = N === 2;
     qStatus(nk);
     document.getElementById('note').textContent = noteText();
   }
 
   function qStatus(nk) {
-    const el = document.getElementById('qStatus'), b = state.beta, q = state.q;
+    const el = document.getElementById('qStatus'), q = state.q, b = state.beta;
+    if (state.N !== 8) return;
     if (q === 'none') {
-      el.innerHTML = b >= POCKET
+      el.innerHTML = nk.m < nk.c0 - 1e-3
         ? '<strong>Closed chamber.</strong> Holds any body with free radius from ' + fmt(nk.m) + ' to ' + fmt(nk.c0) + '.'
-        : '<strong>Open.</strong> The narrowest free radius on the axis is at the centre: whatever fits, leaves.';
+        : '<strong>Open.</strong> The centre is the narrowest point on the axis: whatever fits, leaves.';
       return;
     }
-    const [lo, hi] = WIN[q];
-    const s = b < lo ? '<strong>Leaves along the axis.</strong>' : b <= hi ? '<strong>Held.</strong>' : '<strong>Does not fit at the centre.</strong>';
     const m = quantronMargin(geo, q);
-    const margin = m >= 0 ? ' It could grow by ' + fmt(100 * m, 1) + ' % before touching the cage.' : ' It would have to shrink by ' + fmt(-100 * m, 1) + ' % to fit.';
-    const cut = ringCut > 0 ? ' <strong>Conflict:</strong> its ring of radius 1 runs inside its own torus tube on ' + fmt(100 * ringCut, 1) + ' % of its length, up to 40.2° from the torus equator.' : '';
-    el.innerHTML = s + ' ' + q + ' is held from ' + fmt(lo, 2) + '° to ' + fmt(hi, 2) + '°.' + margin + cut;
+    const st = b < WIN[0] ? '<strong>Leaves along the axis.</strong>' : b <= WIN[1] ? '<strong>Held.</strong>' : '<strong>Does not fit at the centre.</strong>';
+    el.innerHTML = st + ' ' + q + ': ' + QINFO[q] + '. All six are held from ' + fmt(WIN[0], 2) + '° to ' + fmt(WIN[1], 2) + '°. ' +
+      (m >= 0 ? 'It could grow by ' + fmt(100 * m, 1) + ' % before touching the cage.' : 'It would have to shrink by ' + fmt(-100 * m, 1) + ' %.');
   }
 
   function noteText() {
     const N = state.N;
-    if (N === 2) return 'Z. Each latcher\'s ring threads both holes. With elliptical rings both torus axes must be parallel and normal to the link, so Z has no tilt: d = 2.257, ring 1.128 × 0.863. The two rings coincide; here they are drawn one tube width apart. They circulate in the same sense; the tori turn against each other at their contact.';
-    if (N === 4) return 'W. No quantron fits inside: the free radius at the centre is at most 0.467. At 62.67° the rings across the square meet on the axis, at y = −0.733 and +0.733, and close it.';
-    return 'Gluon ring. Tilting the tori pulls the ring in. From 71.58° four rings above and four below lean over the axis and pinch it at about y = ±0.75: the centre becomes a closed chamber. Capture was checked by a full 3D search over positions for each quantron: when a quantron can leave, it leaves along the axis. At 81.07° each ring touches the rings one place away.';
+    if (N === 2) return 'Z. Each ring is the ring of a ⊥ quantron, a circle of radius R, whose torus has moved by R along the ring: the ring now threads the hole, and the partner torus fills the half the move left empty. The two rings coincide; here they are drawn one tube width apart. No tilt is possible.';
+    if (N === 4) return 'W. No quantron fits inside: the free radius at the centre falls from 0.414 to 0.299. At 50.65° the rings across the square meet on the axis, at y = −1.065 and +1.065, and close it.';
+    return 'Gluon ring. Tilting the tori pulls the ring in. From 61.56° four rings above and four below lean over the axis and pinch it at about y = ±1.1: the centre becomes a closed chamber. All six quantrons are held from 63.49° until they no longer fit at 66.54° (full 3D search over positions). At 71.28° each ring touches the rings one place away.';
   }
 
   // ---------- key-angle scale ----------
@@ -532,7 +510,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     const svg = document.getElementById('scale'), K = KEYS[state.N];
     const x = a => K.max > 0 ? a / K.max * 300 : 0;
     let s = '<line x1="0" y1="7" x2="300" y2="7" stroke="var(--rule)" stroke-width="2"/>';
-    if (state.N === 8) s += '<rect x="' + x(73.22) + '" y="2" width="' + (x(75.18) - x(73.22)) + '" height="10" fill="var(--band)" opacity="0.55"/>';
+    if (state.N === 8) s += '<rect x="' + x(WIN[0]) + '" y="2" width="' + (x(WIN[1]) - x(WIN[0])) + '" height="10" fill="var(--band)" opacity="0.55"/>';
     K.items.forEach(k => { s += '<line x1="' + x(k.a) + '" y1="1" x2="' + x(k.a) + '" y2="13" stroke="var(--fg)" stroke-width="1.5"/>'; });
     s += '<line x1="' + x(state.beta) + '" y1="0" x2="' + x(state.beta) + '" y2="14" stroke="var(--out)" stroke-width="2"/>';
     svg.innerHTML = s;
@@ -549,18 +527,15 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
   // ---------- axial profile chart ----------
   function drawChart() {
     const svg = document.getElementById('chart');
-    const W = 340, H = 170, L = 34, Rm = 8, Tm = 10, B = 28;
-    const ymax = 2.0;
+    const W = 340, H = 170, L = 34, Rm = 8, Tm = 10, B = 28, ymax = 2.0;
     const X = y => L + (y + 3) / 6 * (W - L - Rm), Yv = v => Tm + (1 - Math.min(v, ymax) / ymax) * (H - Tm - B);
     let s = '';
     [0, 0.5, 1, 1.5, 2].forEach(v => { s += '<line x1="' + L + '" x2="' + (W - Rm) + '" y1="' + Yv(v) + '" y2="' + Yv(v) + '" stroke="var(--rule)" stroke-width="1"/><text x="' + (L - 6) + '" y="' + (Yv(v) + 3) + '" text-anchor="end">' + fmt(v, 1) + '</text>'; });
     [-3, -2, -1, 0, 1, 2, 3].forEach(y => { s += '<text x="' + X(y) + '" y="' + (H - B + 14) + '" text-anchor="middle">' + y + '</text>'; });
     s += '<text x="' + ((L + W - Rm) / 2) + '" y="' + (H - 2) + '" text-anchor="middle">height on the axis, y</text>';
-    const qr = state.N === 8 && state.q !== 'none' ? QR[state.q] : 1;
-    s += '<line x1="' + L + '" x2="' + (W - Rm) + '" y1="' + Yv(qr) + '" y2="' + Yv(qr) + '" stroke="var(--qring)" stroke-width="1.5" stroke-dasharray="5 4"/>';
-    s += '<text x="' + (W - Rm) + '" y="' + (Yv(qr) - 4) + '" text-anchor="end">quantron radius ' + fmt(qr) + '</text>';
-    const pts = YS.map((y, i) => X(y).toFixed(1) + ',' + Yv(prof[i]).toFixed(1)).join(' ');
-    s += '<polyline points="' + pts + '" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round"/>';
+    s += '<line x1="' + L + '" x2="' + (W - Rm) + '" y1="' + Yv(1) + '" y2="' + Yv(1) + '" stroke="var(--qring)" stroke-width="1.5" stroke-dasharray="5 4"/>';
+    s += '<text x="' + (W - Rm) + '" y="' + (Yv(1) - 4) + '" text-anchor="end">quantum radius R</text>';
+    s += '<polyline points="' + YS.map((y, i) => X(y).toFixed(1) + ',' + Yv(prof[i]).toFixed(1)).join(' ') + '" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round"/>';
     const nk = neckOf();
     s += '<circle cx="' + X(0) + '" cy="' + Yv(nk.c0) + '" r="4" fill="var(--fg)" stroke="var(--panel)" stroke-width="2"/>';
     if (nk.m < nk.c0 - 1e-3) [nk.ym, -nk.ym].forEach(y => { s += '<circle cx="' + X(y) + '" cy="' + Yv(nk.m) + '" r="4" fill="var(--out)" stroke="var(--panel)" stroke-width="2"/>'; });
@@ -602,7 +577,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
   document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => {
     state.q = b.dataset.q;
     document.querySelectorAll('[data-q]').forEach(x => x.setAttribute('aria-pressed', x === b));
-    buildQuantron(state.q); updateReadouts(); drawChart();
+    buildQuantron(state.q); updateReadouts();
   }));
   document.getElementById('showRingAx').onchange = e => { state.ringAx = e.target.checked; rebuild(); };
   document.getElementById('showTorAx').onchange = e => { state.torAx = e.target.checked; rebuild(); };
@@ -615,18 +590,14 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
   window.addEventListener('resize', resize);
 
   let tPrev = performance.now(), clock = 0;
-  const up = V(0, 1, 0);
   function frame(now) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - tPrev) / 1000); tPrev = now;
     if (state.spin) clock += dt;
-    const e = geo.e;
     arrows.forEach(A => {
-      const th = A.th + A.om * 0.6 * clock;
-      const pos = A.r.C.clone().add(A.r.U.clone().multiplyScalar(e.p * Math.cos(th))).add(A.r.W.clone().multiplyScalar(e.q * Math.sin(th)));
-      if (A.shift) pos.add(A.shift);
-      const tan = A.r.U.clone().multiplyScalar(-e.p * Math.sin(th)).add(A.r.W.clone().multiplyScalar(e.q * Math.cos(th))).multiplyScalar(A.om).normalize();
-      A.cone.position.copy(pos); A.cone.quaternion.setFromUnitVectors(up, tan);
+      const q = atLength(A.r.R, A.l0 + A.om * 0.6 * clock);
+      if (A.shift) q.p.add(A.shift);
+      A.cone.position.copy(q.p); A.cone.quaternion.setFromUnitVectors(Y, q.t.multiplyScalar(A.om));
     });
     quantron.rotation.y = clock * 0.8;
     controls.update();
@@ -635,7 +606,6 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
 
   refreshColors();
   setN(8);
-  document.querySelectorAll('[data-q]').forEach(x => x.setAttribute('aria-pressed', x.dataset.q === state.q));
   resize();
   requestAnimationFrame(frame);
 })();
