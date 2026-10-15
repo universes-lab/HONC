@@ -66,6 +66,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--in); outlin
 .key:hover { border-color: var(--rule); }
 .key[aria-current="true"] { border-color: var(--fg); }
 .key .deg { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
+.verify { font: inherit; font-size: 13.5px; padding: 6px 10px; border: 1px solid var(--rule); border-radius: 6px; background: transparent; color: var(--fg); cursor: pointer; align-self: flex-start; }
+.verify:disabled { color: var(--muted); cursor: progress; }
+.vtable { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 12px; font-size: 13px; margin: 0; }
+.vtable span { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; }
+.vtable .h { font-family: var(--font-body); color: var(--muted); }
 .status { font-size: 14px; margin: 0; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--rule); background: var(--bg); }
 .status strong { font-weight: 700; }
 .checks { display: flex; flex-direction: column; gap: 6px; }
@@ -115,11 +120,13 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     <div class="group" id="tiltGroup">
       <label for="tilt"><h2>Torus tilt β</h2></label>
       <div class="slider-row">
-        <input id="tilt" type="range" min="0" max="71.28" step="0.01" value="65">
+        <input id="tilt" type="range" min="0" max="71.30" step="0.01" value="65">
         <span class="val" id="tiltVal">65.00°</span>
       </div>
       <svg class="scale" id="scale" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"></svg>
       <div class="keys" id="keys"></div>
+      <button class="verify" id="verify" type="button">Recompute the key angles from the rules</button>
+      <div class="vtable" id="vout" hidden></div>
     </div>
 
     <div class="group" id="qGroup">
@@ -198,15 +205,15 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
 
   // ---------- key forms (same rules, computed offline; capture checked by a full 3D search over positions) ----------
   const KEYS = {
-    8: { max: 71.28, items: [
+    8: { max: 71.30, items: [
       { a: 0, t: 'Flat ring: torus axes parallel, ring axes meet at the centre' },
       { a: 61.56, t: 'Centre becomes a closed chamber' },
       { a: 63.49, t: 'All six quantrons held' },
       { a: 66.54, t: 'Quantrons no longer fit at the centre' },
-      { a: 71.28, t: 'Rings one place apart touch: four contacts per ring. Tilt cannot grow' } ] },
-    4: { max: 50.65, items: [
+      { a: 71.30, t: 'Rings one place apart touch: four contacts per ring. Tilt cannot grow' } ] },
+    4: { max: 50.67, items: [
       { a: 0, t: 'Flat square: torus axes parallel' },
-      { a: 50.65, t: 'Opposite rings meet on the axis at y = ±1.065. Tilt cannot grow' } ] },
+      { a: 50.67, t: 'Opposite rings meet on the axis at y = ±1.065. Tilt cannot grow' } ] },
     2: { max: 0, items: [ { a: 0, t: 'Only form: each ring is the ⊥-quantron ring, a circle of radius R, with the torus shifted by R; the partner torus fills the vacated half' } ] }
   };
   const WIN = [63.49, 66.54], POCKET = 61.56;
@@ -501,8 +508,8 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
   function noteText() {
     const N = state.N;
     if (N === 2) return 'Z. Each ring is the ring of a ⊥ quantron, a circle of radius R, whose torus has moved by R along the ring: the ring now threads the hole, and the partner torus fills the half the move left empty. The two rings coincide; here they are drawn one tube width apart. No tilt is possible.';
-    if (N === 4) return 'W. No quantron fits inside: the free radius at the centre falls from 0.414 to 0.299. At 50.65° the rings across the square meet on the axis, at y = −1.065 and +1.065, and close it.';
-    return 'Gluon ring. Tilting the tori pulls the ring in. From 61.56° four rings above and four below lean over the axis and pinch it at about y = ±1.1: the centre becomes a closed chamber. All six quantrons are held from 63.49° until they no longer fit at 66.54° (full 3D search over positions). At 71.28° each ring touches the rings one place away.';
+    if (N === 4) return 'W. No quantron fits inside: the free radius at the centre falls from 0.414 to 0.299. At 50.67° the rings across the square meet on the axis, at y = −1.065 and +1.065, and close it.';
+    return 'Gluon ring. Tilting the tori pulls the ring in. From 61.56° four rings above and four below lean over the axis and pinch it at about y = ±1.1: the centre becomes a closed chamber. All six quantrons are held from 63.49° until they no longer fit at 66.54° (full 3D search over positions). At 71.30° each ring touches the rings one place away.';
   }
 
   // ---------- key-angle scale ----------
@@ -558,6 +565,34 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
     hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move);
     hit.addEventListener('pointerleave', () => tip.setAttribute('visibility', 'hidden'));
   }
+
+  // ---------- self-check: recompute the key angles on this page ----------
+  function bisect(f, lo, hi, n = 32) { let flo = f(lo); for (let k = 0; k < n; k++) { const m = (lo + hi) / 2, fm = f(m); if (Math.sign(fm) === Math.sign(flo)) { lo = m; flo = fm; } else hi = m; } return (lo + hi) / 2; }
+  const YH = Array.from({ length: 141 }, (_, i) => i * 0.02);
+  // rings one place apart are mirror images in the bisector plane of the link between them,
+  // so they touch exactly when ring 0 reaches that plane
+  function mirrorGap(N, b) {
+    const g = build(N, b), n = that(3 * Math.PI / N), r = g.rings[0], e = g.r2;
+    return r.M.clone().sub(r.W.clone().multiplyScalar(e.y0)).dot(n) + Math.hypot(e.p * r.u.dot(n), e.q * r.W.dot(n));
+  }
+  function recompute() {
+    const prof8 = b => axialProfile(build(8, b), YH);
+    const rows = [
+      ['Chamber forms', 61.56, bisect(b => { const f = prof8(b); return Math.min(...f.slice(5)) - f[0]; }, 55, 64)],
+      ['Quantrons held from', 63.49, bisect(b => Math.min(...prof8(b)) - 1, 58, 66)],
+      ['Quantrons no longer fit', 66.54, bisect(b => axialProfile(build(8, b), [0])[0] - 1, 60, 70)],
+      ['Gluon rings one apart touch', 71.30, bisect(b => mirrorGap(8, b), 66, 75)],
+      ['W rings across meet on the axis', 50.67, bisect(b => mirrorGap(4, b), 44, 56)]
+    ];
+    const out = document.getElementById('vout');
+    out.innerHTML = '<span class="h" style="text-align:left">Form</span><span class="h">table</span><span class="h">recomputed</span>' +
+      rows.map(r => '<div>' + r[0] + '</div><span>' + fmt(r[1], 2) + '°</span><span>' + fmt(r[2], 2) + '°</span>').join('');
+    out.hidden = false;
+  }
+  document.getElementById('verify').addEventListener('click', e => {
+    const b = e.currentTarget; b.disabled = true; b.textContent = 'Recomputing…';
+    setTimeout(() => { recompute(); b.disabled = false; b.textContent = 'Recompute the key angles from the rules'; }, 30);
+  });
 
   // ---------- controls ----------
   const tilt = document.getElementById('tilt');
