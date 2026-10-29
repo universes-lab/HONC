@@ -1,0 +1,1023 @@
+<title>Qf-нить с навесами</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Mono&family=PT+Sans:wght@400;700&family=PT+Serif:wght@700&display=swap">
+<style>
+/* Layout: чертёжная доска — сцена слева, приборная панель справа; на телефоне — друг под другом.
+   Цвет несёт роль: тела торов — приглушённые, кольца — насыщенные по принадлежности, оси X/Y/Z — свои цвета, суммы — отдельные. */
+:root {
+  --bg: #e9eeef;
+  --panel: #f7f9f9;
+  --fg: #1b2426;
+  --muted: #5a6a6e;
+  --rule: #ccd6d8;
+  --chip: #eef2f2;
+  --torus: #8fa6a9;
+  --htorus: #c2a66f;
+  --chain: #2350a0;
+  --hang: #b5532a;
+  --free: #7a5c99;
+  --sel: #5b2fb8;
+  --axx: #c0345e;
+  --axy: #3d8a2a;
+  --axz: #1b2426;
+  --disp: #8a989b;
+  --sumy: #0f8a8c;
+  --sumxy: #c98400;
+  --ok: #2f7a4b;
+  --warn: #c0392b;
+  --closed: #e0b9a8;
+  --font-display: "PT Serif", Georgia, "Times New Roman", serif;
+  --font-body: "PT Sans", "Segoe UI", Arial, sans-serif;
+  --font-data: "PT Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111718; --panel: #182022; --fg: #e2e9ea; --muted: #93a3a7; --rule: #2b3739; --chip: #1f2a2c;
+    --torus: #587174; --htorus: #a58c58; --chain: #5b88d6; --hang: #d27a4a; --free: #b08fd4; --sel: #a98af0;
+    --axx: #ef6f92; --axy: #8fcf62; --axz: #e2e9ea; --disp: #7d8e92; --sumy: #45c6c8; --sumxy: #f0b440;
+    --ok: #5fbf85; --warn: #ef6f5f; --closed: #6a4236;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111718; --panel: #182022; --fg: #e2e9ea; --muted: #93a3a7; --rule: #2b3739; --chip: #1f2a2c;
+  --torus: #587174; --htorus: #a58c58; --chain: #5b88d6; --hang: #d27a4a; --free: #b08fd4; --sel: #a98af0;
+  --axx: #ef6f92; --axy: #8fcf62; --axz: #e2e9ea; --disp: #7d8e92; --sumy: #45c6c8; --sumxy: #f0b440;
+  --ok: #5fbf85; --warn: #ef6f5f; --closed: #6a4236;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 410px; height: 100%; }
+.stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.lbl { position: absolute; transform: translate(-50%, -50%); font-family: var(--font-data); font-size: 12px; padding: 0 4px; border-radius: 3px; background: var(--panel); color: var(--fg); border: 1px solid var(--rule); white-space: nowrap; }
+.lbl.sel { border-color: var(--sel); color: var(--sel); font-weight: 700; }
+.lbl.ax { background: transparent; border: 0; font-weight: 700; font-size: 13px; }
+.lbl.ghost { opacity: 0.7; font-family: var(--font-body); }
+.hint { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: 12px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.tag { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: 14px; font-size: 12.5px; color: var(--muted); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 4px 8px; pointer-events: none; max-width: calc(100% - 32px); }
+.panel { background: var(--panel); border-left: 1px solid var(--rule); overflow-y: auto; padding-left: 20px; padding-right: max(20px, env(safe-area-inset-right, 0px)); padding-block: 20px 28px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+h1 { font-family: var(--font-display); font-size: 22px; line-height: 1.2; margin: 0; text-wrap: balance; }
+h2 { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 400; }
+.lede { margin: 0; color: var(--muted); font-size: 14px; }
+.badge { align-self: flex-start; font-size: 12.5px; padding: 3px 8px; border: 1px solid var(--rule); border-radius: 999px; background: var(--chip); }
+.group { display: flex; flex-direction: column; gap: 8px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; line-height: 1.2; padding: 7px 3px; background: transparent; color: var(--fg); border: 0; border-left: 1px solid var(--rule); cursor: pointer; }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--panel); }
+.steps button b { display: block; font-family: var(--font-data); font-size: 12px; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--sel); outline-offset: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { font-family: var(--font-data); font-size: 13px; min-width: 2.6em; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--rule); background: var(--chip); color: var(--fg); cursor: pointer; }
+.chips button.h { border-color: var(--htorus); }
+.chips button[aria-pressed="true"] { background: var(--sel); border-color: var(--sel); color: var(--panel); }
+.card { font-size: 13.5px; margin: 0; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 6px; background: var(--bg); display: flex; flex-direction: column; gap: 4px; }
+.card .k { color: var(--muted); }
+.mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.slider { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; }
+.slider label { font-size: 13.5px; }
+.slider input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--sel); }
+.slider input[disabled] { opacity: 0.4; }
+.val { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; font-size: 13px; }
+.sub { font-size: 12.5px; color: var(--muted); margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--rule); background: var(--chip); color: var(--fg); cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+select { font: inherit; font-size: 13px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--rule); background: var(--panel); color: var(--fg); max-width: 100%; min-width: 0; }
+.toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+.toggles label { display: flex; gap: 7px; align-items: center; cursor: pointer; font-size: 13.5px; }
+.toggles input { accent-color: var(--sel); }
+.sw { width: 18px; height: 4px; border-radius: 2px; flex: none; display: inline-block; }
+.checks { display: flex; flex-direction: column; gap: 6px; }
+.check { display: grid; grid-template-columns: 3.4em minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13.5px; }
+.chip { font-family: var(--font-data); font-size: 12px; text-align: center; border-radius: 4px; padding: 1px 0; color: var(--panel); }
+.chip.ok { background: var(--ok); } .chip.bad { background: var(--warn); } .chip.wait { background: var(--muted); }
+.check .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--muted); text-align: right; }
+.trans { display: grid; grid-template-columns: 6.4em minmax(0, 1fr); gap: 4px 10px; font-size: 13.5px; margin: 0; }
+.trans dt { color: var(--muted); }
+.trans dd { margin: 0; min-width: 0; }
+.vecs { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.vecs th { font-weight: 400; color: var(--muted); text-align: right; padding: 2px 4px; font-size: 11.5px; }
+.vecs th:first-child, .vecs td:first-child { text-align: left; }
+.vecs td { padding: 3px 4px; text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; border-top: 1px solid var(--rule); white-space: nowrap; }
+.vecs td:first-child { font-family: var(--font-body); white-space: normal; }
+.tblwrap { overflow-x: auto; }
+.mapwrap { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+#map { width: 100%; max-width: 340px; aspect-ratio: 1; align-self: center; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.note { font-size: 13.5px; margin: 0; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 6px; background: var(--bg); }
+.note p { margin: 0 0 6px; } .note p:last-child { margin: 0; }
+.note ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 3px; }
+@media (max-width: 780px) {
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: clamp(320px, 58vh, 560px) auto; height: auto; }
+  html, body { height: auto; }
+  .panel { border-left: 0; border-top: 1px solid var(--rule); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .toggles { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="app">
+  <div class="stage" id="stage">
+    <div class="labels" id="labels"></div>
+    <div class="tag" id="sceneTag">—</div>
+    <div class="hint">Тяните — поворот · колесо или щипок — масштаб · щелчок по тору или кольцу — выбрать латчер</div>
+  </div>
+  <aside class="panel">
+    <div class="group">
+      <h1>Qf-нить с навесами</h1>
+      <p class="lede">Каждый Qf-латчер — свой тор и своё кольцо. Видно, кто чем владеет, куда смотрят собственные оси и что происходит в узле, когда к нему присоединяют навес. Геометрия ЛМ1, длины — в радиусах кванта R.</p>
+      <span class="badge">Инструмент исследования геометрии · [Г] · не механизм электрона</span>
+    </div>
+
+    <div class="group">
+      <h2>Шаг опыта</h2>
+      <div class="seg steps" role="group" aria-label="Шаг опыта">
+        <button type="button" data-step="1" aria-pressed="true"><b>1</b>два Qf</button>
+        <button type="button" data-step="2" aria-pressed="false"><b>2</b>+ навес</button>
+        <button type="button" data-step="3" aria-pressed="false"><b>3</b>два узла</button>
+        <button type="button" data-step="4" aria-pressed="false"><b>4</b>5 Qf + 3</button>
+        <button type="button" data-step="5" aria-pressed="false"><b>5</b>6 Qf + 4</button>
+      </div>
+      <dl class="trans" id="trans"></dl>
+    </div>
+
+    <div class="group">
+      <h2>Латчер</h2>
+      <div class="chips" id="latChips" role="group" aria-label="Выбор латчера"></div>
+      <div class="card" id="latCard"></div>
+    </div>
+
+    <div class="group">
+      <h2>Собственные оси</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="tX" checked><span class="sw" style="background:var(--axx)"></span>X — ось кольца</label>
+        <label><input type="checkbox" id="tY" checked><span class="sw" style="background:var(--axy)"></span>Y — ось тора</label>
+        <label><input type="checkbox" id="tZ" checked><span class="sw" style="background:var(--axz)"></span>Z = X × Y</label>
+        <label><input type="checkbox" id="tD" checked><span class="sw" style="background:var(--disp)"></span>смещение кольца</label>
+        <label><input type="checkbox" id="tXY"><span class="sw" style="background:var(--sumxy)"></span>X + Y у латчеров</label>
+        <label><input type="checkbox" id="tAll">оси у всех латчеров</label>
+      </div>
+      <div class="seg" role="group" aria-label="Знаки осей">
+        <button type="button" data-signs="cond" aria-pressed="true">знаки условные</button>
+        <button type="button" data-signs="none" aria-pressed="false">без знака</button>
+      </div>
+      <p class="sub" id="signNote"></p>
+    </div>
+
+    <div class="group">
+      <h2>Точка контакта соседних торов</h2>
+      <select id="pairSel" aria-label="Пара соседних торов"></select>
+      <div class="tblwrap"><table class="vecs" id="vecTable"></table></div>
+      <p class="sub" id="vecNote"></p>
+    </div>
+
+    <div class="group">
+      <h2 id="editTitle">Перестройка</h2>
+      <div class="slider"><label for="sA" id="lA">Изгиб</label><span class="val" id="vA"></span><input id="sA" type="range" min="0" max="90" step="0.5" value="0"></div>
+      <div class="slider"><label for="sB" id="lB">Направление изгиба</label><span class="val" id="vB"></span><input id="sB" type="range" min="-180" max="180" step="1" value="0"></div>
+      <div class="slider"><label for="sC" id="lC">Ось следующего тора: отклонение от зеркала δ</label><span class="val" id="vC"></span><input id="sC" type="range" min="-60" max="60" step="0.5" value="0"></div>
+      <div class="row" id="alignRow">
+        <select id="alignSel" aria-label="Вектор для совмещения"></select>
+        <button type="button" class="btn" id="alignBtn">Совместить звено</button>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" id="resetOne">Вернуть этот элемент</button>
+        <button type="button" class="btn" id="resetAll">Вся нить прямо</button>
+      </div>
+      <p class="sub" id="editNote"></p>
+    </div>
+
+    <div class="group mapwrap">
+      <h2>Допустимые положения</h2>
+      <canvas id="map" width="340" height="340" aria-label="Карта допустимых положений выбранного звена"></canvas>
+      <div class="row"><button type="button" class="btn" id="mapBtn">Построить карту</button><span class="sub" id="mapStatus"></span></div>
+      <div class="legend" id="mapLegend"></div>
+      <p class="sub" id="mapNote">Карта перебирает наклон и направление выбранного звена или навеса, остальное оставляет как есть, и для каждого положения запускает проверки ЛМ1, A-5, A-15.</p>
+    </div>
+
+    <div class="group">
+      <h2>Проверки</h2>
+      <div class="checks" aria-live="polite">
+        <div class="check"><span class="chip wait" id="cT">…</span><span>Торы не проникают друг в друга (A-5)</span><span class="num" id="nT"></span></div>
+        <div class="check"><span class="chip wait" id="cB">…</span><span>Кольца вне тел чужих торов</span><span class="num" id="nB"></span></div>
+        <div class="check"><span class="chip wait" id="cK">…</span><span>Кольцо касается своих торов только в каспе (ЛМ1)</span><span class="num" id="nK"></span></div>
+        <div class="check"><span class="chip wait" id="cR">…</span><span>Кольца сходятся только в общем каспе</span><span class="num" id="nR"></span></div>
+        <div class="check"><span class="chip wait" id="cA">…</span><span>Не больше трёх колец в отверстии (A-15)</span><span class="num" id="nA"></span></div>
+        <div class="check"><span class="chip wait" id="cO">…</span><span>Закон узла: все кольца отверстия проходят в одну сторону</span><span class="num" id="nO"></span></div>
+      </div>
+      <p class="sub">Числа — наименьший зазор в R: между средними окружностями торов минус 1, от кольца до трубки тора. Касание соседних торов даёт 0.</p>
+    </div>
+
+    <div class="group">
+      <h2>Сравнение</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="gPrev" checked>предыдущий шаг рядом</label>
+        <label><input type="checkbox" id="gStraight" checked>призрак прямой нити</label>
+      </div>
+    </div>
+
+    <div class="note">
+      <p><strong>Вопрос опыта.</strong> Почему присоединение третьего Qf со своими X, Y и Z может потребовать перестройки уже существующего звена?</p>
+      <ul>
+        <li>Закона перестройки нет. Страница сама положение узла не выбирает: форму меняете вы, она показывает, что допустимо и куда смотрят оси.</li>
+        <li>«Совместить звено» — ручная операция для проверки идеи, не закон и не равновесие.</li>
+        <li>Нижний навес — тот же Qf, перенесённый на другую сторону поворотом на 180° вокруг исходной оси нити.</li>
+        <li>Знаки X и Y условные: тор 0 и кольцо 0 — затравка; дальше Y по J5 (соседние торы вращаются встречно), обход колец — по знаковому закону узла [Г | К-1, J5]. Класс XYZ/YXZ каждого латчера получается расчётом.</li>
+        <li>Суммы векторов — диагностические построения [Г], не воздействия. X + Y и X × Y — разные векторы.</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ===== Узел Qf-нити: геометрия ЛМ1 без обязательного зеркального правила, собственные оси латчеров, проверки.
+// Единица длины R = 1. Рогатый тор a = b = 1/2: средняя окружность радиуса 1/2, трубка 1/2.
+// Кольцо — плоский эллипс длины 2π через центры двух торов, касательный к их осям в каспах (ЛМ1).
+// Оси торов звена и хорда лежат в плоскости кольца (касание в каспе). Зеркальное правило — частный случай δ = 0.
+const QN = (function () {
+  const TWO_PI = 2 * Math.PI;
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const len = a => Math.hypot(a[0], a[1], a[2]);
+  const nrm = a => { const l = len(a); return l > 1e-15 ? mul(a, 1 / l) : [0, 0, 0]; };
+  const rot = (x, k, ang) => { const c = Math.cos(ang), s = Math.sin(ang); return add(add(mul(x, c), mul(cross(k, x), s)), mul(k, dot(k, x) * (1 - c))); };
+  const reflect = (T, n) => sub(T, mul(n, 2 * dot(T, n)));
+  const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+  const angle = (a, b) => deg(Math.acos(Math.max(-1, Math.min(1, dot(nrm(a), nrm(b))))));
+
+  function perim(p, q) { const a = Math.max(p, q), b = Math.min(p, q), h = ((a - b) / (a + b)) ** 2; return Math.PI * (a + b) * (1 + 3 * h / (10 + Math.sqrt(4 - 3 * h))); }
+
+  // ---------- эллипс длины 2π через A и B, касательный к осям TA (в A) и TB (в B) ----------
+  // Пучок коник L_A·L_B − μ·y² = 0 касается обеих прямых в A и B при любом μ; μ подбирается по длине.
+  function ringGeneral(A, TA, u, d, TB) {
+    const X = nrm(u);
+    let Yv = sub(TA, mul(X, dot(TA, X)));
+    if (len(Yv) < 1e-9) return null;                       // ось тора вдоль хорды — вырождение
+    Yv = nrm(Yv);
+    const a = Math.atan2(dot(TA, Yv), dot(TA, X));        // ∈ (0, π)
+    let tbx = dot(TB, X), tby = dot(TB, Yv);
+    if (tby < 0) { tbx = -tbx; tby = -tby; }
+    const outOfPlane = Math.abs(dot(TB, nrm(cross(X, Yv))));
+    const b = Math.atan2(tby, tbx);
+    const p1 = -Math.sin(a), q1 = Math.cos(a), p2 = -Math.sin(b), q2 = Math.cos(b), r2 = d * Math.sin(b);
+    const cA = p1 * p2, cB = p1 * q2 + q1 * p2, cD = p1 * r2, cE = q1 * r2;
+    if (cA < 1e-9) return null;
+    const muStar = q1 * q2 - cB * cB / (4 * cA);
+    function ell(mu) {
+      const cC = q1 * q2 - mu;
+      const det = 4 * cA * cC - cB * cB;
+      if (det <= 0) return null;
+      const xc = (cB * cE - 2 * cC * cD) / det, yc = (cB * cD - 2 * cA * cE) / det;
+      const Fc = 0.5 * (cD * xc + cE * yc);
+      const tr = cA + cC, dd = Math.sqrt(Math.max(0, (cA - cC) ** 2 + cB * cB));
+      const l1 = (tr + dd) / 2, l2 = (tr - dd) / 2;
+      if (l2 <= 0 || Fc >= 0) return null;
+      const s1 = Math.sqrt(-Fc / l1), s2 = Math.sqrt(-Fc / l2);
+      // собственный вектор для l1
+      let e1 = Math.abs(cB) > 1e-14 ? [cB / 2, l1 - cA] : (cA >= cC ? [1, 0] : [0, 1]);
+      const n1 = Math.hypot(e1[0], e1[1]); e1 = [e1[0] / n1, e1[1] / n1];
+      const e2 = [-e1[1], e1[0]];
+      return { xc, yc, s1, s2, e1, e2, P: perim(s1, s2) };
+    }
+    // длина растёт от 2d (μ → −∞) до ∞ (μ → μ*)
+    let lo = 0, hi = 30; // t = ln(μ* − μ): μ = μ* − e^t
+    const P = t => { const e = ell(muStar - Math.exp(t)); return e ? e.P : Infinity; };
+    lo = -40; if (P(hi) > TWO_PI) return null;
+    for (let k = 0; k < 100; k++) { const m = (lo + hi) / 2; (P(m) > TWO_PI ? lo = m : hi = m); }
+    const e = ell(muStar - Math.exp((lo + hi) / 2));
+    if (!e) return null;
+    const to3 = (x, y) => add(A, add(mul(X, x), mul(Yv, y)));
+    const E1 = add(mul(X, e.e1[0]), mul(Yv, e.e1[1])), E2 = add(mul(X, e.e2[0]), mul(Yv, e.e2[1]));
+    const C = to3(e.xc, e.yc);
+    const N = nrm(cross(E1, E2));                          // нормаль ориентации параметризации
+    const ring = { A, B: add(A, mul(X, d)), u: X, W: Yv, C, E1, E2, s1: e.s1, s2: e.s2, N, d, a, b, outOfPlane,
+      rmax: Math.max(e.s1, e.s2) };
+    return ring;
+  }
+  function ringAt(r, t) { return add(r.C, add(mul(r.E1, r.s1 * Math.cos(t)), mul(r.E2, r.s2 * Math.sin(t)))); }
+  function ringTan(r, t) { return add(mul(r.E1, -r.s1 * Math.sin(t)), mul(r.E2, r.s2 * Math.cos(t))); }
+  function ringPoints(r, n) { const out = []; for (let k = 0; k < n; k++) out.push(ringAt(r, k / n * TWO_PI)); return out; }
+  function ringParamOf(r, P) { const v = sub(P, r.C); return Math.atan2(dot(v, r.E2) / r.s2, dot(v, r.E1) / r.s1); }
+
+  // ---------- торы ----------
+  function circlePts(A, T, n) {
+    const a = Math.abs(T[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+    const e1 = nrm(cross(T, a)), e2 = cross(T, e1), out = [];
+    for (let k = 0; k < n; k++) { const t = k / n * TWO_PI; out.push(add(A, add(mul(e1, 0.5 * Math.cos(t)), mul(e2, 0.5 * Math.sin(t))))); }
+    return out;
+  }
+  function distToMid(X, A, T) { const r = sub(X, A), z = dot(r, T), rho = len(sub(r, mul(T, z))); return Math.hypot(rho - 0.5, z); }
+  function nearestOnMid(X, A, T) { const r = sub(X, A), z = dot(r, T); let p = sub(r, mul(T, z)); const l = len(p); p = l > 1e-12 ? mul(p, 0.5 / l) : mul(nrm(cross(T, [T[1], T[2], T[0]])), 0.5); return add(A, p); }
+  function midGap(A1, T1, A2, T2, n = 96) {
+    let best = Infinity, bt = 0; const pts = circlePts(A1, T1, n);
+    pts.forEach((X, i) => { const g = distToMid(X, A2, T2); if (g < best) { best = g; bt = i; } });
+    // уточнение по параметру
+    const a = Math.abs(T1[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0], e1 = nrm(cross(T1, a)), e2 = cross(T1, e1);
+    let lo = (bt - 1) / n * TWO_PI, hi = (bt + 1) / n * TWO_PI;
+    const f = t => distToMid(add(A1, add(mul(e1, 0.5 * Math.cos(t)), mul(e2, 0.5 * Math.sin(t)))), A2, T2);
+    for (let k = 0; k < 40; k++) { const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3; (f(m1) < f(m2) ? hi = m2 : lo = m1); }
+    const t = (lo + hi) / 2, q1 = add(A1, add(mul(e1, 0.5 * Math.cos(t)), mul(e2, 0.5 * Math.sin(t))));
+    return { gap: Math.min(best, f(t)), q1, q2: nearestOnMid(q1, A2, T2) };
+  }
+  const support = u => 0.5 * Math.sqrt(Math.max(0, 1 - u * u)) + 0.5;
+  // расстояние касания двух торов вдоль направления u (тела трубок соприкасаются)
+  function contactDistance(TA, TB, u, mirror) {
+    if (mirror) return 2 * support(Math.min(Math.abs(dot(TA, u)), 1));
+    let lo = 0.3, hi = 2.05;
+    for (let k = 0; k < 36; k++) { const m = (lo + hi) / 2; (midGap([0, 0, 0], TA, mul(u, m), TB, 72).gap < 1 ? lo = m : hi = m); }
+    return hi;
+  }
+
+  // ---------- сборка ----------
+  // cfg = { N, links: [{theta, phi, delta}] (N штук; последнее кольцо свободное), hangs: [{host, side, rho, psi, delta}] }
+  function nodeFrame(ez, T) {
+    let ey = sub(T, mul(ez, dot(T, ez)));
+    if (len(ey) < 1e-6) ey = nrm(cross(ez, [1, 0, 0])); else ey = nrm(ey);
+    const ex = cross(ey, ez);
+    return { ex, ey, ez };
+  }
+  function makeLink(A, T, u, delta) {
+    const mirror = Math.abs(delta) < 1e-9;
+    let n = cross(u, T); if (len(n) < 1e-9) return null; n = nrm(n);
+    const Tm = nrm(reflect(T, u));
+    const T2 = mirror ? Tm : nrm(rot(Tm, n, delta));
+    const d = contactDistance(T, T2, u, mirror);
+    const ring = ringGeneral(A, T, u, d, T2);
+    if (!ring) return null;
+    return { A2: add(A, mul(u, d)), T2, d, ring, mirror, cosg: Math.abs(dot(T, u)) };
+  }
+  function build(cfg) {
+    const tori = [], rings = [], frames = [];
+    const T0 = [0, 1, 0];
+    let A = [0, 0, 0], T = T0, ez = [0, 0, 1];
+    tori.push({ A, T, kind: 'chain', idx: 0, label: '0', owner: -1 });
+    const fail = [];
+    for (let k = 0; k < cfg.N; k++) {
+      const f = nodeFrame(ez, T); frames.push(f);
+      const L = cfg.links[k] || { theta: 0, phi: 0, delta: 0 };
+      const th = rad(L.theta), ph = rad(L.phi);
+      const u = nrm(add(mul(f.ez, Math.cos(th)), mul(add(mul(f.ex, Math.cos(ph)), mul(f.ey, Math.sin(ph))), Math.sin(th))));
+      const last = k === cfg.N - 1;
+      const lk = makeLink(A, T, u, last ? 0 : rad(L.delta || 0));
+      if (!lk) { fail.push('звено ' + k); break; }
+      rings.push({ ...lk.ring, owner: k, target: last ? -1 : k + 1, kind: last ? 'free' : 'chain', idx: k, label: String(k), cosg: lk.cosg, mirror: lk.mirror });
+      if (!last) { A = lk.A2; T = lk.T2; tori.push({ A, T, kind: 'chain', idx: k + 1, label: String(k + 1) }); }
+      ez = u;
+    }
+    const nChain = tori.length;
+    (cfg.hangs || []).forEach((h, j) => {
+      if (h.host >= nChain) { fail.push('навес ' + (j + 1) + ': нет тора-хозяина'); return; }
+      const host = tori[h.host];
+      const f = frames[h.host];
+      const e0 = mul(f.ex, h.side), r = rad(h.rho || 0), p = rad(h.psi || 0);
+      const e = nrm(add(mul(e0, Math.cos(r)), mul(add(mul(f.ez, -Math.cos(p)), mul(f.ey, Math.sin(p))), Math.sin(r))));
+      const lk = makeLink(host.A, host.T, e, rad(h.delta || 0));
+      if (!lk) { fail.push('навес ' + (j + 1)); return; }
+      const ti = tori.length;
+      tori.push({ A: lk.A2, T: lk.T2, kind: 'hang', idx: ti, host: h.host, side: h.side, label: 'Н' + (j + 1), hang: j });
+      rings.push({ ...lk.ring, owner: ti, target: h.host, kind: 'hang', idx: rings.length, label: 'Н' + (j + 1), hang: j, cosg: lk.cosg, mirror: lk.mirror });
+    });
+    // кольца по торам: собственное и входящие
+    tori.forEach((t, i) => { t.own = rings.findIndex(r => r.owner === i); t.inRings = rings.map((r, ri) => r.target === i ? ri : -1).filter(x => x >= 0); });
+    return { cfg, tori, rings, frames, fail };
+  }
+
+  // ---------- ориентации: Y по J5 (соседние торы вращаются встречно), обход колец по закону узла ----------
+  // Знаки условные: затравка — тор 0 (Y = +ось) и кольцо 0 (обход такой, что X×Y смотрит к центру кольца).
+  function orient(g) {
+    const { tori, rings } = g;
+    const Y = tori.map(() => null), sig = rings.map(() => 0), pass = tori.map(() => 0), conflicts = [];
+    Y[0] = tori[0].T.slice();
+    // J5: Y соседа — со знаком, противоположным зеркальному образу
+    let changed = true;
+    while (changed) {
+      changed = false;
+      rings.forEach(r => {
+        if (r.target < 0) return;
+        const i = r.owner, j = r.target, u = nrm(sub(tori[j].A, tori[i].A));
+        if (Y[i] && !Y[j]) { const ref = mul(reflect(Y[i], u), -1); Y[j] = dot(tori[j].T, ref) >= 0 ? tori[j].T.slice() : mul(tori[j].T, -1); changed = true; }
+        else if (Y[j] && !Y[i]) { const ref = mul(reflect(Y[j], u), -1); Y[i] = dot(tori[i].T, ref) >= 0 ? tori[i].T.slice() : mul(tori[i].T, -1); changed = true; }
+      });
+    }
+    tori.forEach((t, i) => { if (!Y[i]) Y[i] = t.T.slice(); });
+    const passSign = (ri, ti, s) => { const r = rings[ri]; const t = ringParamOf(r, tori[ti].A); return Math.sign(dot(mul(ringTan(r, t), s), Y[ti])) || 1; };
+    // затравка: кольцо 0
+    if (rings.length) {
+      const r0 = rings[0], disp = sub(r0.C, tori[0].A);
+      sig[0] = dot(cross(r0.N, Y[0]), disp) >= 0 ? 1 : -1;
+      pass[0] = passSign(0, 0, sig[0]);
+      if (r0.target >= 0) pass[r0.target] = passSign(0, r0.target, sig[0]);
+    }
+    changed = true;
+    while (changed) {
+      changed = false;
+      rings.forEach((r, ri) => {
+        if (sig[ri]) return;
+        const ends = [r.owner, r.target].filter(x => x >= 0);
+        const known = ends.find(t => pass[t]);
+        if (known === undefined) return;
+        sig[ri] = passSign(ri, known, 1) === pass[known] ? 1 : -1;
+        ends.forEach(t => { const p = passSign(ri, t, sig[ri]); if (!pass[t]) pass[t] = p; else if (pass[t] !== p) conflicts.push([ri, t]); });
+        changed = true;
+      });
+    }
+    rings.forEach((r, ri) => { if (!sig[ri]) sig[ri] = 1; });
+    // проверка закона узла по всем отверстиям
+    tori.forEach((t, ti) => {
+      const rs = rings.map((r, ri) => (r.owner === ti || r.target === ti) ? ri : -1).filter(x => x >= 0);
+      const signs = rs.map(ri => passSign(ri, ti, sig[ri]));
+      if (signs.some(s => s !== signs[0])) conflicts.push([-1, ti]);
+    });
+    const lat = tori.map((t, i) => {
+      const ri = t.own; if (ri < 0) return null;
+      const r = rings[ri], Xv = mul(r.N, sig[ri]), Yv = Y[i], Zv = nrm(cross(Xv, Yv));
+      const disp = sub(r.C, t.A), dispU = nrm(disp);
+      const dispPerp = nrm(sub(disp, mul(t.T, dot(disp, t.T))));
+      return { torus: i, ring: ri, X: Xv, Y: Yv, Z: Zv, disp, dispU, dispPerp, cls: dot(Zv, disp) >= 0 ? 'XYZ' : 'YXZ', ZdotDisp: dot(Zv, dispPerp) };
+    });
+    return { Y, sig, lat, conflicts };
+  }
+
+  // ---------- проверки ЛМ1, A-5, A-15 ----------
+  function check(g, fast) {
+    const { tori, rings } = g;
+    const SEC = fast ? 32 : 64, RS = fast ? 120 : 240, RC = fast ? 48 : 72;
+    const res = { torus: { min: Infinity, bad: [] }, ringBody: { min: Infinity, bad: [] }, cusp: { min: Infinity, bad: [] }, ringRing: { min: Infinity, bad: [] }, a15: [], a15bad: [], tangent: 0, fail: g.fail.slice() };
+    for (let i = 0; i < tori.length; i++) for (let j = i + 1; j < tori.length; j++) {
+      if (len(sub(tori[i].A, tori[j].A)) > 2.05) continue;
+      const mids = circlePts(tori[i].A, tori[i].T, SEC);
+      let m = Infinity; for (const X of mids) m = Math.min(m, distToMid(X, tori[j].A, tori[j].T));
+      const gap = m - 1;
+      res.torus.min = Math.min(res.torus.min, gap);
+      if (gap < -2e-3) res.torus.bad.push([i, j, gap]);
+    }
+    const pts = rings.map(r => ringPoints(r, RS));
+    rings.forEach((r, ri) => {
+      const own = [r.owner, r.target].filter(e => e >= 0);
+      tori.forEach((t, ti) => {
+        if (len(sub(t.A, r.C)) > r.rmax + 1.1) return;
+        const isOwn = own.includes(ti);
+        let m = Infinity;
+        for (const X of pts[ri]) { if (isOwn && len(sub(X, t.A)) < 0.12) continue; m = Math.min(m, distToMid(X, t.A, t.T) - 0.5); }
+        if (isOwn) { res.cusp.min = Math.min(res.cusp.min, m); if (m < -2e-3) res.cusp.bad.push([ri, ti, m]); }
+        else { res.ringBody.min = Math.min(res.ringBody.min, m); if (m < -2e-3) res.ringBody.bad.push([ri, ti, m]); }
+      });
+      // касание оси в каспе: касательная кольца в центре тора параллельна оси
+      own.forEach(ti => { const t = ringParamOf(r, tori[ti].A); res.tangent = Math.max(res.tangent, len(cross(nrm(ringTan(r, t)), tori[ti].T))); });
+    });
+    const coarse = rings.map(r => ringPoints(r, RC));
+    for (let i = 0; i < rings.length; i++) for (let j = i + 1; j < rings.length; j++) {
+      const ri = rings[i], rj = rings[j];
+      if (len(sub(ri.C, rj.C)) > ri.rmax + rj.rmax + 0.2) continue;
+      const shared = [ri.owner, ri.target].filter(e => e >= 0 && (e === rj.owner || e === rj.target)).map(e => tori[e].A);
+      const far = X => !shared.some(S => len(sub(X, S)) < 0.25);
+      let m = Infinity;
+      for (const X of coarse[i]) { if (!far(X)) continue; for (const Y of coarse[j]) { const dd = len(sub(X, Y)); if (dd < m) m = dd; } }
+      if (m < 0.15) { m = Infinity; for (const X of pts[i]) { if (!far(X)) continue; for (const Y of pts[j]) { const dd = len(sub(X, Y)); if (dd < m) m = dd; } } }
+      res.ringRing.min = Math.min(res.ringRing.min, m);
+      if (m < 0.01) res.ringRing.bad.push([i, j, m]);
+    }
+    tori.forEach((t, ti) => { const n = rings.filter(r => r.owner === ti || r.target === ti).length; res.a15.push(n); if (n > 3) res.a15bad.push(ti); });
+    res.ok = !res.torus.bad.length && !res.ringBody.bad.length && !res.cusp.bad.length && !res.ringRing.bad.length && !res.a15bad.length && !res.fail.length;
+    return res;
+  }
+
+  // точка касания двух торов (середина между ближайшими точками средних окружностей)
+  function contactPoint(t1, t2) { const m = midGap(t1.A, t1.T, t2.A, t2.T, 96); return { P: mul(add(m.q1, m.q2), 0.5), gap: m.gap - 1 }; }
+
+  return { build, orient, check, contactPoint, ringPoints, ringAt, ringTan, ringParamOf, ringGeneral, contactDistance, makeLink, nodeFrame, circlePts,
+    add, sub, mul, dot, cross, len, nrm, rot, reflect, rad, deg, angle, perim };
+})();
+if (typeof module !== 'undefined') module.exports = QN;
+
+(function () {
+  const $ = id => document.getElementById(id);
+  const fmt = (x, d = 3) => Number.isFinite(x) ? x.toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—';
+  const fsg = (x, d = 2) => (x >= 0.0005 ? '+' : x <= -0.0005 ? '−' : ' ') + fmt(Math.abs(x), d);
+  const fdeg = (x, d = 1) => fmt(x, d) + '°';
+  const V3 = a => new THREE.Vector3(a[0], a[1], a[2]);
+  const { add, sub, mul, dot, cross, len, nrm, angle } = QN;
+
+  // ---------- шаги опыта ----------
+  const STEPS = {
+    1: { N: 2, hangs: [], added: 'Два Qf. Тор 0 со своим кольцом, продетым в касп тора 1, и тор 1 со своим кольцом. Кольцо тора 1 никуда не входит — свободный конец участка.' },
+    2: { N: 2, hangs: [[1, 1]], added: 'К тору 1 присоединён третий Qf — навес Н1: свой тор и своё кольцо, продетое в касп тора 1.' },
+    3: { N: 4, hangs: [[1, 1], [2, -1]], added: 'Нить из четырёх Qf, навесы на соседних узлах 1 и 2 с противоположных сторон. Н2 — тот же Qf, перенесённый поворотом на 180° вокруг оси нити.' },
+    4: { N: 5, hangs: [[1, 1], [2, -1], [3, 1]], added: 'Фрагмент: пять Qf нити и три навеса на узлах 1, 2, 3; стороны чередуются.' },
+    5: { N: 6, hangs: [[1, 1], [2, -1], [3, 1], [4, -1]], added: 'Фрагмент: шесть Qf нити и четыре навеса на узлах 1–4; стороны чередуются.' }
+  };
+  const blank = s => ({ N: STEPS[s].N, links: Array.from({ length: STEPS[s].N }, () => ({ theta: 0, phi: 0, delta: 0 })),
+    hangs: STEPS[s].hangs.map(([host, side]) => ({ host, side, rho: 0, psi: 0, delta: 0 })) });
+  const cfgs = {}; for (const s of [1, 2, 3, 4, 5]) cfgs[s] = blank(s);
+  const state = { step: 1, sel: 1, pair: 0, signs: 'cond' };
+  let G = null, O = null, C = null, straightOK = {};
+
+  // элемент перестройки выбранного латчера
+  function editTarget() {
+    const t = G.tori[state.sel];
+    if (!t) return null;
+    if (t.kind === 'hang') return { kind: 'hang', j: t.hang, p: cfgs[state.step].hangs[t.hang] };
+    return { kind: 'link', k: t.idx, p: cfgs[state.step].links[t.idx], free: t.idx === cfgs[state.step].N - 1 };
+  }
+
+  // ---------- сцена ----------
+  const stage = $('stage'), labelsEl = $('labels');
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  stage.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(36, 1, 0.05, 500);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = false;
+  controls.addEventListener('change', render);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x445055, 0.85));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(5, 8, 6); scene.add(sun);
+  let group = new THREE.Group(); scene.add(group);
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#888';
+  const col = n => new THREE.Color(css(n));
+  const M = {};
+  function makeMats() {
+    const tor = (c, o) => new THREE.MeshStandardMaterial({ color: col(c), transparent: true, opacity: o, roughness: 0.6, depthWrite: false, side: THREE.DoubleSide });
+    Object.assign(M, {
+      torus: tor('--torus', 0.30), htorus: tor('--htorus', 0.34), selTorus: tor('--sel', 0.30), tgtTorus: tor('--sel', 0.15), bad: tor('--warn', 0.5), ghostT: tor('--torus', 0.10),
+      chain: new THREE.MeshStandardMaterial({ color: col('--chain'), roughness: 0.4 }), hang: new THREE.MeshStandardMaterial({ color: col('--hang'), roughness: 0.4 }),
+      free: new THREE.MeshStandardMaterial({ color: col('--free'), roughness: 0.4 }), selRing: new THREE.MeshStandardMaterial({ color: col('--sel'), roughness: 0.35 }),
+      badRing: new THREE.MeshStandardMaterial({ color: col('--warn'), roughness: 0.4 }),
+      ghostL: new THREE.LineBasicMaterial({ color: col('--muted'), transparent: true, opacity: 0.45 }),
+      centre: new THREE.MeshBasicMaterial({ color: col('--fg') }),
+      disp: new THREE.LineDashedMaterial({ color: col('--disp'), dashSize: 0.08, gapSize: 0.06 }),
+      X: new THREE.MeshBasicMaterial({ color: col('--axx') }), Y: new THREE.MeshBasicMaterial({ color: col('--axy') }), Z: new THREE.MeshBasicMaterial({ color: col('--axz') }),
+      SY: new THREE.MeshBasicMaterial({ color: col('--sumy') }), SXY: new THREE.MeshBasicMaterial({ color: col('--sumxy') }),
+      Xf: new THREE.MeshBasicMaterial({ color: col('--axx'), transparent: true, opacity: 0.45 }), Yf: new THREE.MeshBasicMaterial({ color: col('--axy'), transparent: true, opacity: 0.45 })
+    });
+    renderer.setClearColor(col('--bg'), 1);
+  }
+  const torusGeo = new THREE.TorusGeometry(0.5, 0.5, 40, 120);
+  const sphereGeo = new THREE.SphereGeometry(1, 16, 12);
+  const qFromZ = d => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.clone().normalize());
+  const qFromY = d => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize());
+  function arrow(g, from, dir, L, mat, opt = {}) {
+    const d = V3(dir); const l = d.length(); if (l < 1e-6 || L < 1e-6) return null;
+    d.normalize(); const r = opt.r || 0.017, head = opt.noHead ? 0 : 0.15;
+    const o = V3(from);
+    const start = opt.both ? o.clone().addScaledVector(d, -L) : o.clone();
+    const shaft = (opt.both ? 2 * L : L) - head;
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r, r, Math.max(shaft, 0.01), 10), mat);
+    cyl.position.copy(start.clone().addScaledVector(d, shaft / 2)); cyl.quaternion.copy(qFromY(d)); g.add(cyl);
+    if (head) { const cone = new THREE.Mesh(new THREE.ConeGeometry(r * 3, head, 14), mat); cone.position.copy(start.clone().addScaledVector(d, shaft + head / 2)); cone.quaternion.copy(qFromY(d)); g.add(cone); }
+    return o.clone().addScaledVector(d, L + 0.12);
+  }
+  function dot3(g, p, r, mat) { const m = new THREE.Mesh(sphereGeo, mat); m.scale.setScalar(r); m.position.copy(V3(p)); g.add(m); }
+  function ringTube(r, mat, rad) { const pts = QN.ringPoints(r, 300).map(V3); return new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 300, rad, 8, true), mat); }
+  function ringLine(r, mat, off) { const pts = QN.ringPoints(r, 160).map(p => V3(off ? add(p, off) : p)); pts.push(pts[0].clone()); return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat); }
+
+  let labelItems = [], pickables = [], toriMeshes = [], ringMeshes = [];
+  function disposeGroup(g) { g.traverse(o => { if (o.geometry && o.geometry !== torusGeo && o.geometry !== sphereGeo) o.geometry.dispose(); }); scene.remove(g); }
+  function label(p, text, cls, px) { labelItems.push({ p: p.isVector3 ? p.clone() : V3(p), text, cls, px }); }
+
+  function draw(fit) {
+    disposeGroup(group); group = new THREE.Group(); scene.add(group);
+    labelItems = []; pickables = []; toriMeshes = []; ringMeshes = [];
+    const g = G, o = O, sel = state.sel, selT = g.tori[sel], selRing = selT ? g.rings[selT.own] : null;
+    const tgt = selRing && selRing.target >= 0 ? selRing.target : -1;
+    // торы
+    g.tori.forEach((t, i) => {
+      const m = new THREE.Mesh(torusGeo, i === sel ? M.selTorus : i === tgt ? M.tgtTorus : t.kind === 'hang' ? M.htorus : M.torus);
+      m.position.copy(V3(t.A)); m.quaternion.copy(qFromZ(V3(t.T))); m.userData = { type: 'torus', idx: i };
+      group.add(m); toriMeshes.push(m); pickables.push(m);
+      dot3(group, t.A, 0.045, M.centre);
+      label(t.A, t.label, i === sel ? 'sel' : '', [-20, 20]);
+    });
+    // кольца
+    g.rings.forEach((r, ri) => {
+      const mine = selT && ri === selT.own;
+      const mat = mine ? M.selRing : r.kind === 'hang' ? M.hang : r.kind === 'free' ? M.free : M.chain;
+      const m = ringTube(r, mat, mine ? 0.03 : r.kind === 'free' ? 0.016 : 0.022); m.userData = { type: 'ring', idx: ri };
+      group.add(m); ringMeshes.push(m); pickables.push(m);
+      dot3(group, r.C, 0.035, mat);
+    });
+    // оси
+    const showAll = $('tAll').checked, signed = state.signs === 'cond';
+    const lats = o.lat.map((l, i) => l && (showAll || i === sel) ? l : null);
+    lats.forEach(l => {
+      if (!l) return;
+      const t = g.tori[l.torus], r = g.rings[l.ring], main = l.torus === sel;
+      const mx = main ? M.X : M.Xf, my = main ? M.Y : M.Yf, rr = main ? 0.017 : 0.011;
+      if ($('tD').checked) {
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V3(t.A), V3(r.C)]), M.disp); line.computeLineDistances(); group.add(line);
+      }
+      if ($('tY').checked) { const tip = arrow(group, t.A, signed ? l.Y : t.T, 1.0, my, { r: rr, both: !signed, noHead: !signed }); if (main && tip) label(tip, 'Y', 'ax'); }
+      if ($('tX').checked) { const tip = arrow(group, r.C, signed ? l.X : r.N, 1.0, mx, { r: rr, both: !signed, noHead: !signed }); if (main && tip) label(tip, 'X', 'ax'); }
+      if ($('tZ').checked) { const tip = arrow(group, t.A, l.Z, 1.35, M.Z, { r: rr * 0.9, both: !signed, noHead: !signed }); if (main && tip) label(tip, signed ? 'Z' : '±Z', 'ax'); }
+      if ($('tXY').checked && signed) { const tip = arrow(group, t.A, add(l.X, l.Y), len(add(l.X, l.Y)), M.SXY, { r: rr }); if (main && tip) label(tip, 'X+Y', 'ax'); }
+    });
+    // точка контакта выбранной пары
+    const pr = g.rings[state.pair];
+    if (pr && pr.target >= 0) {
+      const cp = QN.contactPoint(g.tori[pr.owner], g.tori[pr.target]).P;
+      dot3(group, cp, 0.06, M.SY);
+      const lo = o.lat[pr.owner];
+      if (signed && lo) {
+        const Yt = o.Y[pr.target];
+        arrow(group, cp, lo.Y, 0.8, M.Yf, { r: 0.011 }); arrow(group, cp, Yt, 0.8, M.Yf, { r: 0.011 });
+        const sy = add(lo.Y, Yt); const t1 = arrow(group, cp, sy, len(sy), M.SY, { r: 0.022 }); if (t1) label(t1, 'Yо+Yс', 'ax');
+        const sxy = add(lo.X, lo.Y); const t2 = arrow(group, cp, sxy, len(sxy), M.SXY, { r: 0.022 }); if (t2) label(t2, 'X+Y', 'ax');
+        const t3 = arrow(group, cp, lo.Z, 1.0, M.Z, { r: 0.02 }); if (t3) label(t3, 'X×Y', 'ax');
+      }
+    }
+    // призрак прямой нити
+    if ($('gStraight').checked && !isStraight(cfgs[state.step])) {
+      const g0 = QN.build(blank(state.step));
+      g0.rings.forEach(r => group.add(ringLine(r, M.ghostL)));
+    }
+    // предыдущий шаг рядом
+    let off = null;
+    if ($('gPrev').checked && state.step > 1) {
+      const gp = QN.build(cfgs[state.step - 1]);
+      let minX = Infinity, maxXp = -Infinity; g.tori.forEach(t => minX = Math.min(minX, t.A[0])); gp.tori.forEach(t => maxXp = Math.max(maxXp, t.A[0]));
+      off = [minX - maxXp - 4.5, 0, 0];
+      gp.tori.forEach(t => { const m = new THREE.Mesh(torusGeo, M.ghostT); m.position.copy(V3(add(t.A, off))); m.quaternion.copy(qFromZ(V3(t.T))); group.add(m); });
+      gp.rings.forEach(r => group.add(ringLine(r, M.ghostL, off)));
+      let cz = 0; gp.tori.forEach(t => cz += t.A[2]); cz /= gp.tori.length;
+      label(add([0, 0, cz], add(off, [0, -1.7, 0])), 'шаг ' + (state.step - 1) + ' — до', 'ghost');
+    }
+    if (fit) fitCamera(off);
+    paintChecks();
+    render();
+  }
+  function isStraight(cfg) { return cfg.links.every(l => !l.theta && !l.delta) && cfg.hangs.every(h => !h.rho && !h.delta); }
+  function fitCamera(off) {
+    const box = new THREE.Box3(); G.tori.forEach(t => box.expandByPoint(V3(t.A))); G.rings.forEach(r => box.expandByPoint(V3(r.C)));
+    if (off) box.expandByPoint(V3(off));
+    const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()).length() / 2 + 1.6;
+    controls.target.copy(c);
+    const dir = new THREE.Vector3(0.55, 0.95, 0.75).normalize();
+    camera.position.copy(c.clone().add(dir.multiplyScalar(s / Math.tan(THREE.MathUtils.degToRad(17)) * 0.9)));
+    camera.near = 0.05; camera.far = s * 40; camera.updateProjectionMatrix(); controls.update();
+  }
+  function render() {
+    renderer.render(scene, camera);
+    const w = stage.clientWidth, h = stage.clientHeight;
+    labelsEl.textContent = '';
+    labelItems.forEach(it => {
+      const v = it.p.clone().project(camera);
+      if (v.z > 1 || v.z < -1) return;
+      const el = document.createElement('span'); el.className = 'lbl ' + (it.cls || ''); el.textContent = it.text;
+      el.style.left = ((v.x + 1) / 2 * w + (it.px ? it.px[0] : 0)) + 'px'; el.style.top = ((1 - v.y) / 2 * h + (it.px ? it.px[1] : 0)) + 'px';
+      if (it.cls === 'ax') el.style.color = it.text === 'X' ? css('--axx') : it.text === 'Y' ? css('--axy') : it.text === 'X+Y' ? css('--sumxy') : it.text.startsWith('Yо') ? css('--sumy') : css('--axz');
+      labelsEl.appendChild(el);
+    });
+  }
+  function resize() { const w = stage.clientWidth, h = stage.clientHeight || 400; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); render(); }
+  window.addEventListener('resize', resize);
+
+  // выбор щелчком
+  const ray = new THREE.Raycaster(); let downAt = null;
+  renderer.domElement.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
+  renderer.domElement.addEventListener('pointerup', e => {
+    if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2((e.clientX - rect.left) / rect.width * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1), camera);
+    const hits = ray.intersectObjects(pickables, false);
+    if (!hits.length) return;
+    const hRing = hits.find(h => h.object.userData.type === 'ring' && h.distance < hits[0].distance + 0.6);
+    const u = (hRing || hits[0]).object.userData;
+    select(u.type === 'torus' ? u.idx : G.rings[u.idx].owner);
+  });
+
+  // ---------- панель ----------
+  function select(i, keepPair) {
+    state.sel = i; state.note = '';
+    if (!keepPair) {
+      const t = G.tori[i], own = G.rings[t.own];
+      state.pair = own && own.target >= 0 ? t.own : (t.inRings[0] ?? 0);
+    }
+    refresh(false, false);
+  }
+  function chipsHTML() {
+    const box = $('latChips'); box.textContent = '';
+    G.tori.forEach((t, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = t.label; if (t.kind === 'hang') b.className = 'h';
+      b.setAttribute('aria-pressed', String(i === state.sel)); b.title = t.kind === 'hang' ? 'навес на торе ' + t.host : 'латчер нити ' + t.idx;
+      b.addEventListener('click', () => select(i)); box.appendChild(b);
+    });
+  }
+  function ringName(ri) { const r = G.rings[ri]; return r.kind === 'hang' ? 'кольцо ' + r.label : 'кольцо ' + r.label; }
+  function latCard() {
+    const t = G.tori[state.sel], r = G.rings[t.own], l = O.lat[state.sel];
+    const inside = G.rings.map((x, ri) => (x.owner === state.sel || x.target === state.sel) ? ri : -1).filter(x => x >= 0);
+    const who = t.kind === 'hang' ? `Навес ${t.label} на торе ${t.host} (сторона ${t.side > 0 ? '+' : '−'})` : `Латчер ${t.label} нити`;
+    const goes = r.target >= 0 ? `продето в касп тора ${G.tori[r.target].label}` : 'свободно — не входит ни в один тор';
+    const rows = [
+      `<div><strong>${who}</strong> · тор ${t.label} · своё кольцо ${r.label} ${goes}</div>`,
+      `<div><span class="k">В отверстии тора ${t.label}:</span> ${inside.map(ri => ri === t.own ? 'своё кольцо ' + G.rings[ri].label : ringName(ri) + ' (латчер ' + G.tori[G.rings[ri].owner].label + ')').join(', ')} — ${inside.length} из 3</div>`,
+      `<div class="mono">звено d = ${fmt(r.d)} · |cos(ось тора, хорда)| = ${fmt(r.cosg)} · ось у дальнего тора: ${r.target < 0 ? '—' : r.mirror ? 'зеркало' : 'отклонена от зеркала'}</div>`,
+      state.signs === 'cond' ? `<div class="mono">класс ${l.cls} (знаки условные) · Z·смещение = ${fmt(l.ZdotDisp)}</div>` : `<div class="mono">знаки не заданы: Z определена с точностью до знака</div>`
+    ];
+    $('latCard').innerHTML = rows.join('');
+  }
+  function pairOptions() {
+    const sel = $('pairSel'); sel.textContent = '';
+    G.rings.forEach((r, ri) => {
+      if (r.target < 0) return;
+      const o = document.createElement('option'); o.value = ri;
+      o.textContent = `тор ${G.tori[r.owner].label} — тор ${G.tori[r.target].label} · кольцо ${r.label}`;
+      sel.appendChild(o);
+    });
+    if (G.rings[state.pair] && G.rings[state.pair].target >= 0) sel.value = state.pair; else { const first = G.rings.findIndex(r => r.target >= 0); state.pair = first; sel.value = first; }
+  }
+  function vecTable() {
+    const r = G.rings[state.pair]; const tb = $('vecTable');
+    if (!r || r.target < 0) { tb.innerHTML = ''; $('vecNote').textContent = 'В этом шаге нет пары соседних торов.'; return; }
+    const ow = G.tori[r.owner], node = ow.kind === 'hang' ? ow.host : ow.idx, f = G.frames[node];
+    const l = O.lat[r.owner], Yt = O.Y[r.target];
+    const signed = state.signs === 'cond';
+    const rows = [
+      ['Y тора ' + ow.label, signed ? l.Y : null, 'axy'], ['Y тора ' + G.tori[r.target].label, signed ? Yt : null, 'axy'],
+      ['Yо + Yс — сумма осей двух торов', signed ? add(l.Y, Yt) : null, 'sumy'],
+      ['X кольца ' + r.label, signed ? l.X : null, 'axx'], ['X + Y латчера ' + ow.label, signed ? add(l.X, l.Y) : null, 'sumxy'],
+      [(signed ? '' : '±') + 'X × Y латчера ' + ow.label, signed ? l.Z : l.Z.map(Math.abs), 'axz'], ['смещение кольца от тора', l.dispU, 'disp']
+    ];
+    let h = '<tr><th>вектор</th><th>вдоль нити</th><th>поперёк</th><th>из плоскости</th><th>|v|</th></tr>';
+    rows.forEach(([name, v, c]) => {
+      const sw = `<span class="sw" style="background:var(--${c});margin-right:6px;vertical-align:middle"></span>`;
+      if (!v) { h += `<tr><td>${sw}${name}</td><td colspan="4">знак не задан</td></tr>`; return; }
+      const s = 1;
+      h += `<tr><td>${sw}${name}</td><td>${fsg(dot(v, f.ez) * s)}</td><td>${fsg(dot(v, f.ex) * s)}</td><td>${fsg(dot(v, f.ey) * s)}</td><td>${fmt(len(v), 2)}</td></tr>`;
+    });
+    tb.innerHTML = h;
+    const notes = [];
+    notes.push(`о — тор ${ow.label}, владелец кольца ${r.label}; с — соседний тор ${G.tori[r.target].label}. Векторы перенесены в точку касания торов только для сравнения направлений. Оси отсчёта — у узла ${G.tori[node].label}: «вдоль» — по входящему звену, «поперёк» — к стороне + в плоскости торов, «из плоскости» — вдоль оси тора ${G.tori[node].label}.`);
+    if (signed) {
+      notes.push(`∠(X + Y, X × Y) = ${fdeg(angle(add(l.X, l.Y), l.Z))}: сумма лежит в плоскости осей, произведение ей перпендикулярно.`);
+      notes.push(`∠(X × Y, смещение) = ${fdeg(angle(l.Z, l.dispU))}; ∠(X + Y, вдоль нити) = ${fdeg(angle(add(l.X, l.Y), f.ez))}; |Yо + Yс| = ${fmt(len(add(l.Y, Yt)), 3)}.`);
+    }
+    $('vecNote').textContent = notes.join(' ');
+  }
+  function stepTrans() {
+    const cfg = cfgs[state.step], c = C;
+    const nLinks = cfg.N, free = 1, nH = cfg.hangs.length, dof = 3 * (nLinks - 1) + 2 * free + 3 * nH;
+    const full = G.tori.map((t, i) => C ? C.a15[i] : 0).map((n, i) => n === 3 ? G.tori[i].label : null).filter(Boolean);
+    const rows = [
+      ['Добавлено', STEPS[state.step].added],
+      ['Сохраняется', `длина каждого кольца 2π; кольцо касается оси тора в каспе${c ? ' (погрешность ' + c.tangent.toExponential(0) + ')' : ''}; сцепление всех колец с торами (A-5).`],
+      ['Проверки', !c ? '…' : c.ok ? 'всё допустимо' : 'нарушено: ' + violations(c).join('; ')],
+      ['A-15', full.length ? 'три кольца — предел — в отверстиях торов ' + full.join(', ') : 'нигде нет трёх колец'],
+      ['Свобода', `${dof} параметров: по 3 у звена нити (изгиб, его направление, ось следующего тора), 2 у свободного кольца, по 3 у навеса. Закона, который выбрал бы их значения, нет [О].`],
+      ['Прямая', straightOK[state.step] === undefined ? '…' : straightOK[state.step] ? 'остаётся допустимой: по одной геометрии ЛМ1 перестраивать нить не требуется' : 'недопустима — нить обязана перестроиться']
+    ];
+    $('trans').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  }
+  function violations(c) {
+    const out = [];
+    if (c.fail.length) out.push('не строится: ' + c.fail.join(', '));
+    if (c.torus.bad.length) out.push('торы ' + c.torus.bad.map(([i, j]) => G.tori[i].label + '–' + G.tori[j].label).join(', '));
+    if (c.ringBody.bad.length) out.push('кольцо в теле чужого тора: ' + c.ringBody.bad.map(([ri, ti]) => G.rings[ri].label + '→' + G.tori[ti].label).join(', '));
+    if (c.cusp.bad.length) out.push('кольцо задевает свой тор вне каспа: ' + c.cusp.bad.map(([ri]) => G.rings[ri].label).join(', '));
+    if (c.ringRing.bad.length) out.push('кольца сходятся вне каспа: ' + c.ringRing.bad.map(([i, j]) => G.rings[i].label + '/' + G.rings[j].label).join(', '));
+    if (c.a15bad.length) out.push('A-15 у торов ' + c.a15bad.map(i => G.tori[i].label).join(', '));
+    return out;
+  }
+
+  // перестройка
+  const SL = { A: $('sA'), B: $('sB'), C: $('sC') };
+  function editUI() {
+    const e = editTarget();
+    if (!e) return;
+    if (e.kind === 'link') {
+      const k = e.k, toNext = e.free ? 'свободное кольцо' : 'тор ' + (k + 1);
+      $('editTitle').textContent = `Перестройка: звено латчера ${k} (тор ${k} → ${toNext})`;
+      $('lA').textContent = 'Изгиб θ — от направления входящего звена'; $('lB').textContent = `Направление изгиба φ: 0° — к стороне +, 90° — к оси тора ${k}`;
+      $('lC').textContent = e.free ? 'Ось дальнего тора: у свободного кольца нет' : `Ось тора ${k + 1}: отклонение от зеркала δ`;
+      SL.A.value = e.p.theta; SL.B.value = e.p.phi; SL.C.value = e.p.delta; SL.C.disabled = !!e.free;
+      $('alignRow').hidden = false; alignOptions(k);
+      $('editNote').textContent = state.note || (k === 0 ? 'Звено 0 отсчитывается от оси z; ось тора 0 неподвижна.' : 'Звенья дальше по нити следуют за этим звеном и сохраняют свои изгибы.');
+    } else {
+      const h = e.p, j = e.j;
+      $('editTitle').textContent = `Перестройка: навес Н${j + 1} на торе ${h.host}`;
+      $('lA').textContent = 'Наклон навеса ρ — от поперечного положения'; $('lB').textContent = 'Направление наклона ψ: 0° — назад, 90° — к оси хозяина, 180° — вперёд';
+      $('lC').textContent = `Ось тора Н${j + 1}: отклонение от зеркала δ`;
+      SL.A.value = h.rho; SL.B.value = h.psi; SL.C.value = h.delta; SL.C.disabled = false;
+      $('alignRow').hidden = true;
+      $('editNote').textContent = state.note || 'Навес держится только за касп хозяина; хозяин и нить при этом не двигаются.';
+    }
+    syncVals();
+  }
+  function syncVals() { $('vA').textContent = fdeg(+SL.A.value); $('vB').textContent = fdeg(+SL.B.value, 0); $('vC').textContent = SL.C.disabled ? '—' : fdeg(+SL.C.value); }
+  [['A'], ['B'], ['C']].forEach(([k]) => SL[k].addEventListener('input', () => {
+    const e = editTarget(); if (!e) return;
+    const v = +SL[k].value;
+    if (e.kind === 'link') e.p[k === 'A' ? 'theta' : k === 'B' ? 'phi' : 'delta'] = v; else e.p[k === 'A' ? 'rho' : k === 'B' ? 'psi' : 'delta'] = v;
+    syncVals(); refresh(false, true);
+  }));
+  function alignVectors(k) {
+    const out = [], tk = G.tori[k], hj = G.tori.findIndex(t => t.kind === 'hang' && t.host === k);
+    const lk = O.lat[k], lprev = k > 0 ? O.lat[k - 1] : null, lh = hj >= 0 ? O.lat[hj] : null;
+    if (lh) {
+      out.push(['Z навеса на этом торе', lh.Z], ['X + Y навеса', add(lh.X, lh.Y)], ['Y тора ' + k + ' + Y навеса', add(O.Y[k], O.Y[hj])]);
+      if (lprev) out.push(['биссектриса Z входящего латчера и Z навеса', add(lprev.Z, lh.Z)]);
+    }
+    if (lk) out.push(['X + Y своего латчера', add(lk.X, lk.Y)]);
+    if (lprev) out.push(['Z входящего латчера (прямо)', lprev.Z]);
+    return out;
+  }
+  function alignOptions(k) {
+    const sel = $('alignSel'), prev = sel.value; sel.textContent = '';
+    const vs = alignVectors(k);
+    vs.forEach(([n], i) => { const o = document.createElement('option'); o.value = i; o.textContent = n; sel.appendChild(o); });
+    if (prev && +prev < vs.length) sel.value = prev;
+    $('alignBtn').disabled = !vs.length || state.signs !== 'cond';
+  }
+  $('alignBtn').addEventListener('click', () => {
+    const e = editTarget(); if (!e || e.kind !== 'link') return;
+    const v = alignVectors(e.k)[+$('alignSel').value]; if (!v) return;
+    if (len(v[1]) < 1e-6) { state.note = `Вектор «${v[0]}» нулевой — совмещать не с чем.`; editUI(); state.note = ''; return; }
+    const f = G.frames[e.k], d = nrm(v[1]);
+    e.p.theta = Math.round(angle(d, f.ez) * 2) / 2; e.p.phi = Math.round(QN.deg(Math.atan2(dot(d, f.ey), dot(d, f.ex))));
+    if (e.p.theta > 90) { state.note = `Вектор «${v[0]}» смотрит назад, на ${fdeg(e.p.theta)} от входящего звена; изгиб больше 90° здесь не строится, звено поставлено на 90°.`; e.p.theta = 90; }
+    else state.note = `Звено ${e.k} совмещено с вектором «${v[0]}»: θ = ${fdeg(e.p.theta)}, φ = ${fdeg(e.p.phi, 0)}. Ручная операция, не закон.`;
+    refresh(false, true); state.note = '';
+  });
+  $('resetOne').addEventListener('click', () => { const e = editTarget(); if (!e) return; if (e.kind === 'link') Object.assign(e.p, { theta: 0, phi: 0, delta: 0 }); else Object.assign(e.p, { rho: 0, psi: 0, delta: 0 }); editUI(); refresh(false, true); });
+  $('resetAll').addEventListener('click', () => { cfgs[state.step] = blank(state.step); editUI(); refresh(false, true); });
+
+  // знаки
+  document.querySelectorAll('[data-signs]').forEach(b => b.addEventListener('click', () => {
+    state.signs = b.dataset.signs; document.querySelectorAll('[data-signs]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    refresh(false, false);
+  }));
+  ['tX', 'tY', 'tZ', 'tD', 'tXY', 'tAll', 'gPrev', 'gStraight'].forEach(id => $(id).addEventListener('change', () => draw(id === 'gPrev')));
+  $('pairSel').addEventListener('change', e => { state.pair = +e.target.value; vecTable(); draw(false); });
+
+  // шаги
+  document.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => setStep(+b.dataset.step)));
+  function setStep(s) {
+    state.step = s; document.querySelectorAll('[data-step]').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.step === s)));
+    G = QN.build(cfgs[s]);
+    const lastHang = G.tori.length - 1;
+    state.sel = STEPS[s].hangs.length ? G.tori[lastHang].host : 1;
+    const t = G.tori[state.sel]; state.pair = STEPS[s].hangs.length ? G.tori[lastHang].own : (G.rings[t.own].target >= 0 ? t.own : t.inRings[0] ?? 0);
+    if (straightOK[s] === undefined) { const gs = QN.build(blank(s)); straightOK[s] = QN.check(gs).ok; }
+    mapClear();
+    refresh(true, true);
+  }
+
+  // ---------- общий пересчёт ----------
+  let checkTimer = 0;
+  function refresh(fit, geomChanged, keepNote) {
+    if (geomChanged) G = QN.build(cfgs[state.step]);
+    O = QN.orient(G);
+    chipsHTML(); latCard(); pairOptions(); vecTable(); editUI();
+    $('signNote').textContent = state.signs === 'cond'
+      ? 'Направления осей — условные: затравка у тора 0 и кольца 0, дальше по J5 и закону узла. Класс каждого латчера — расчёт.'
+      : 'Оси показаны линиями без направления: знак обхода не задан. Суммы при этом не определены.';
+    if (geomChanged) { C = null; clearTimeout(checkTimer); ['cT', 'cB', 'cK', 'cR', 'cA', 'cO'].forEach(id => setChip(id, null, '…')); checkTimer = setTimeout(runChecks, 140); }
+    mapSync();
+    stepTrans();
+    const t = G.tori[state.sel];
+    $('sceneTag').textContent = `Шаг ${state.step} · нить ${cfgs[state.step].N} Qf · навесов ${cfgs[state.step].hangs.length} · выбран ${t.kind === 'hang' ? 'навес ' + t.label : 'латчер ' + t.label}`;
+    draw(fit);
+  }
+  function setChip(id, ok, text) { const el = $(id); el.className = 'chip ' + (ok === null ? 'wait' : ok ? 'ok' : 'bad'); el.textContent = text; }
+  function runChecks() {
+    C = QN.check(G);
+    const n = x => Number.isFinite(x) ? fmt(x, 3) : 'нет пар';
+    setChip('cT', !C.torus.bad.length, C.torus.bad.length ? 'нет' : 'да'); $('nT').textContent = n(C.torus.min);
+    setChip('cB', !C.ringBody.bad.length, C.ringBody.bad.length ? 'нет' : 'да'); $('nB').textContent = n(C.ringBody.min);
+    setChip('cK', !C.cusp.bad.length, C.cusp.bad.length ? 'нет' : 'да'); $('nK').textContent = n(C.cusp.min);
+    setChip('cR', !C.ringRing.bad.length, C.ringRing.bad.length ? 'нет' : 'да'); $('nR').textContent = n(C.ringRing.min);
+    setChip('cA', !C.a15bad.length, C.a15bad.length ? 'нет' : 'да'); $('nA').textContent = 'макс. ' + Math.max(...C.a15);
+    const conf = O.conflicts.filter(([ri]) => ri < 0).length;
+    setChip('cO', !conf, conf ? 'нет' : 'да'); $('nO').textContent = conf ? conf + ' отв.' : 'классы ' + [...new Set(O.lat.filter(Boolean).map(l => l.cls))].join('/');
+    stepTrans(); paintChecks(); render();
+  }
+  function paintChecks() {
+    if (!C) return;
+    const bt = new Set(), br = new Set();
+    C.torus.bad.forEach(([i, j]) => { bt.add(i); bt.add(j); }); C.a15bad.forEach(i => bt.add(i));
+    C.ringBody.bad.forEach(([ri]) => br.add(ri)); C.cusp.bad.forEach(([ri]) => br.add(ri)); C.ringRing.bad.forEach(([i, j]) => { br.add(i); br.add(j); });
+    toriMeshes.forEach((m, i) => { if (bt.has(i)) m.material = M.bad; });
+    ringMeshes.forEach((m, i) => { if (br.has(i)) m.material = M.badRing; });
+  }
+
+  // ---------- карта допустимых положений ----------
+  const mapCv = $('map'), mctx = mapCv.getContext('2d');
+  let mapData = null, mapJob = 0;
+  const TH = [], PH = []; for (let t = 7.5; t <= 90; t += 7.5) TH.push(t); for (let p = -180; p < 180; p += 15) PH.push(p);
+  function mapKey() { const e = editTarget(); return e ? state.step + ':' + e.kind + ':' + (e.kind === 'link' ? e.k : e.j) : ''; }
+  function mapSig() {
+    const e = editTarget(); if (!e) return '';
+    const c = JSON.parse(JSON.stringify(cfgs[state.step]));
+    if (e.kind === 'link') { c.links[e.k].theta = 0; c.links[e.k].phi = 0; } else { c.hangs[e.j].rho = 0; c.hangs[e.j].psi = 0; }
+    return JSON.stringify(c);
+  }
+  function mapSync() { if (mapData && (mapData.key !== mapKey() || mapData.sig !== mapSig())) mapClear(); else { drawMap(); legend(); } }
+  function mapClear() { mapJob++; mapData = null; $('mapStatus').textContent = ''; $('mapNote').textContent = 'Карта перебирает наклон и направление выбранного звена или навеса, остальное оставляет как есть, и для каждого положения запускает проверки ЛМ1, A-5, A-15.'; drawMap(); legend(); }
+  function legend() {
+    const e = editTarget(); const isLink = e && e.kind === 'link';
+    $('mapLegend').innerHTML = `<span><i class="box" style="background:var(--ok)"></i>допустимо</span>` +
+      (isLink ? `<span><i class="box" style="background:var(--closed)"></i>закрыто навесами этого шага</span>` : '') +
+      `<span><i class="box" style="background:var(--muted)"></i>запрещено ЛМ1, A-5 или A-15</span><span><i class="box" style="background:var(--sel);border-radius:50%"></i>текущее положение</span>`;
+  }
+  $('mapBtn').addEventListener('click', buildMap);
+  function buildMap() {
+    const e = editTarget(); if (!e) return;
+    const job = ++mapJob, key = mapKey(), step = state.step;
+    const base = JSON.parse(JSON.stringify(cfgs[step]));
+    const noHang = e.kind === 'link' && base.hangs.length ? { ...JSON.parse(JSON.stringify(base)), hangs: [] } : null;
+    const cells = [[0, 0]]; TH.forEach(t => PH.forEach(p => cells.push([t, p])));
+    const res = new Array(cells.length); let i = 0;
+    function setP(c, t, p) { if (e.kind === 'link') { c.links[e.k].theta = t; c.links[e.k].phi = p; } else { c.hangs[e.j].rho = t; c.hangs[e.j].psi = p; } }
+    function test(c) { return QN.check(QN.build(c), true).ok; }
+    mapData = { key, sig: mapSig(), cells, res, link: e.kind === 'link', done: false };
+    function chunk() {
+      if (job !== mapJob) return;
+      const t0 = performance.now();
+      while (i < cells.length && performance.now() - t0 < 30) {
+        const [t, p] = cells[i];
+        const c = JSON.parse(JSON.stringify(base)); setP(c, t, p);
+        const ok = test(c);
+        let closed = false;
+        if (!ok && noHang) { const c2 = JSON.parse(JSON.stringify(noHang)); setP(c2, t, p); closed = test(c2); }
+        res[i] = ok ? 'ok' : closed ? 'closed' : 'bad'; i++;
+      }
+      $('mapStatus').textContent = i < cells.length ? 'строю… ' + Math.round(100 * i / cells.length) + ' %' : '';
+      drawMap();
+      if (i < cells.length) setTimeout(chunk, 0);
+      else { mapData.done = true; mapSummary(); }
+    }
+    chunk();
+  }
+  function mapSummary() {
+    const r = mapData.res, n = r.length, ok = r.filter(x => x === 'ok').length, cl = r.filter(x => x === 'closed').length;
+    const e = editTarget();
+    let s = `Допустимо ${Math.round(100 * ok / n)} % положений` + (mapData.link ? `; навесы этого шага закрыли ${Math.round(100 * cl / n)} %` : '') + '. ';
+    s += r[0] === 'ok' ? 'Исходное положение (центр) допустимо: геометрия перестройки не требует, она лишь ограничивает выбор.' : 'Исходное положение недопустимо.';
+    $('mapNote').textContent = s;
+  }
+  function drawMap() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), W = 340;
+    if (mapCv.width !== W * dpr) { mapCv.width = W * dpr; mapCv.height = W * dpr; }
+    mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mctx.clearRect(0, 0, W, W);
+    const cx = W / 2, cy = W / 2, R = W / 2 - 34;
+    const e = editTarget(); const isLink = !e || e.kind === 'link';
+    mctx.fillStyle = css('--bg'); mctx.beginPath(); mctx.arc(cx, cy, R, 0, 2 * Math.PI); mctx.fill();
+    const colOf = s => s === 'ok' ? css('--ok') : s === 'closed' ? css('--closed') : css('--muted');
+    if (mapData && mapData.key === mapKey()) {
+      const dT = 7.5, dP = 15;
+      mapData.cells.forEach(([t, p], i) => {
+        const s = mapData.res[i]; if (!s) return;
+        mctx.fillStyle = colOf(s); mctx.globalAlpha = s === 'ok' ? 0.55 : 0.8;
+        if (t === 0) { mctx.beginPath(); mctx.arc(cx, cy, R * dT / 2 / 90, 0, 2 * Math.PI); mctx.fill(); }
+        else {
+          const r0 = R * (t - dT / 2) / 90, r1 = R * Math.min(90, t + dT / 2) / 90, a0 = -(p + dP / 2) * Math.PI / 180, a1 = -(p - dP / 2) * Math.PI / 180;
+          mctx.beginPath(); mctx.arc(cx, cy, r1, a0, a1); mctx.arc(cx, cy, r0, a1, a0, true); mctx.closePath(); mctx.fill();
+        }
+      });
+      mctx.globalAlpha = 1;
+    }
+    // сетка
+    mctx.strokeStyle = css('--rule'); mctx.lineWidth = 1;
+    [30, 60, 90].forEach(t => { mctx.beginPath(); mctx.arc(cx, cy, R * t / 90, 0, 2 * Math.PI); mctx.stroke(); });
+    for (let a = 0; a < 360; a += 45) { const r = a * Math.PI / 180; mctx.beginPath(); mctx.moveTo(cx, cy); mctx.lineTo(cx + R * Math.cos(r), cy - R * Math.sin(r)); mctx.stroke(); }
+    mctx.fillStyle = css('--muted'); mctx.font = '11px ' + css('--font-data'); mctx.textAlign = 'left';
+    [30, 60, 90].forEach(t => mctx.fillText(t + '°', cx + 3, cy - R * t / 90 + 11));
+    mctx.font = '12px ' + css('--font-body'); mctx.fillStyle = css('--fg');
+    const labels = isLink ? ['сторона +', 'к оси тора', 'сторона −', 'от оси'] : ['назад', 'к оси хозяина', 'вперёд', 'от оси'];
+    mctx.textAlign = 'right'; mctx.fillText(labels[0], W - 2, cy - 6);
+    mctx.textAlign = 'center'; mctx.fillText(labels[1], cx, 14); mctx.fillText(labels[3], cx, W - 4);
+    mctx.textAlign = 'left'; mctx.fillText(labels[2], 2, cy - 6);
+    // текущее положение
+    if (e) {
+      const t = e.kind === 'link' ? e.p.theta : e.p.rho, p = e.kind === 'link' ? e.p.phi : e.p.psi, r = R * t / 90, a = p * Math.PI / 180;
+      mctx.fillStyle = css('--sel'); mctx.beginPath(); mctx.arc(cx + r * Math.cos(a), cy - r * Math.sin(a), 5, 0, 2 * Math.PI); mctx.fill();
+      mctx.strokeStyle = css('--panel'); mctx.lineWidth = 1.5; mctx.stroke();
+    }
+  }
+
+  // ---------- тема ----------
+  function onTheme() { makeMats(); draw(false); drawMap(); }
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onTheme);
+  new MutationObserver(onTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- старт ----------
+  makeMats(); resize();
+  setStep(1);
+  legend();
+  new ResizeObserver(resize).observe(stage);
+  window.__QN_APP = { state, cfgs, setStep, select, buildMap, get labels() { return labelItems.map(l => [l.text, l.p.x.toFixed(2), l.p.y.toFixed(2), l.p.z.toFixed(2)]); }, get G() { return G; }, get O() { return O; }, get C() { return C; } };
+})();
+</script>
