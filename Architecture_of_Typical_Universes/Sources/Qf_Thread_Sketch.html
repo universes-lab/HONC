@@ -1,0 +1,595 @@
+<title>Qf-нить с навесами</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Mono&family=PT+Sans:wght@400;700&family=PT+Serif:wght@700&display=swap">
+<style>
+/* Layout: та же чертёжная доска, что у «Geometry of Latched λ-Molecules»: фигура слева, приборная панель справа; на телефоне — друг под другом */
+:root {
+  --bg: #e9eeef;
+  --panel: #f7f9f9;
+  --fg: #1b2426;
+  --muted: #5a6a6e;
+  --rule: #ccd6d8;
+  --torus: #8fa6a9;
+  --htorus: #c2a66f;
+  --chain: #2350a0;
+  --hang: #b5532a;
+  --free: #7a5c99;
+  --tax: #6c8a2a;
+  --ok: #2f7a4b;
+  --warn: #c0392b;
+  --chip: #eef2f2;
+  --font-display: "PT Serif", Georgia, "Times New Roman", serif;
+  --font-body: "PT Sans", "Segoe UI", Arial, sans-serif;
+  --font-data: "PT Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111718; --panel: #182022; --fg: #e2e9ea; --muted: #93a3a7; --rule: #2b3739;
+    --torus: #587174; --htorus: #a58c58; --chain: #5b88d6; --hang: #d27a4a; --free: #b08fd4;
+    --tax: #a8c25a; --ok: #5fbf85; --warn: #ef6f5f; --chip: #1f2a2c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111718; --panel: #182022; --fg: #e2e9ea; --muted: #93a3a7; --rule: #2b3739;
+  --torus: #587174; --htorus: #a58c58; --chain: #5b88d6; --hang: #d27a4a; --free: #b08fd4;
+  --tax: #a8c25a; --ok: #5fbf85; --warn: #ef6f5f; --chip: #1f2a2c;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 390px; height: 100%; }
+.stage { position: relative; min-width: 0; min-height: 0; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.hint { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: 12px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.tag { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: 14px; font-size: 12.5px; color: var(--muted); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 4px 8px; pointer-events: none; }
+.panel { background: var(--panel); border-left: 1px solid var(--rule); overflow-y: auto; padding-left: 20px; padding-right: max(20px, env(safe-area-inset-right, 0px)); padding-block: 20px 28px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+h1 { font-family: var(--font-display); font-size: 22px; line-height: 1.2; margin: 0; text-wrap: balance; }
+h2 { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 400; }
+.lede { margin: 0; color: var(--muted); font-size: 14px; }
+.badge { align-self: flex-start; font-size: 12.5px; padding: 3px 8px; border: 1px solid var(--rule); border-radius: 999px; background: var(--chip); }
+.group { display: flex; flex-direction: column; gap: 8px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13.5px; line-height: 1.25; padding: 7px 4px; background: transparent; color: var(--fg); border: 0; border-left: 1px solid var(--rule); cursor: pointer; }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--panel); }
+.presets { grid-auto-flow: row; grid-template-columns: 1fr 1fr; }
+.presets button { border-left: 0; border-top: 1px solid var(--rule); }
+.presets button:nth-child(even) { border-left: 1px solid var(--rule); }
+.presets button:nth-child(-n+2) { border-top: 0; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--chain); outline-offset: 2px; }
+.slider { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; }
+.slider label { font-size: 13.5px; }
+.slider input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--chain); }
+.val { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; font-size: 13px; }
+.sub { font-size: 12.5px; color: var(--muted); margin: 0; }
+.checks { display: flex; flex-direction: column; gap: 6px; }
+.check { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13.5px; }
+.chip { font-family: var(--font-data); font-size: 12px; text-align: center; border-radius: 4px; padding: 1px 0; color: var(--panel); }
+.chip.ok { background: var(--ok); }
+.chip.bad { background: var(--warn); }
+.chip.wait { background: var(--muted); }
+.check .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--muted); text-align: right; }
+.toggles { display: flex; flex-direction: column; gap: 6px; }
+.toggles label { display: flex; gap: 8px; align-items: center; cursor: pointer; font-size: 14px; }
+.toggles input { accent-color: var(--chain); }
+dl.read { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; margin: 0; padding-top: 12px; border-top: 1px solid var(--rule); }
+dl.read dt { color: var(--muted); font-size: 13px; }
+dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; font-size: 13px; }
+.legend { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.legend div { display: flex; align-items: center; gap: 8px; }
+.sw { width: 22px; height: 4px; border-radius: 2px; flex: none; }
+.sw.box { height: 12px; width: 16px; border-radius: 3px; opacity: 0.8; }
+.note { font-size: 13.5px; margin: 0; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 6px; background: var(--bg); }
+.note p { margin: 0 0 6px; } .note p:last-child { margin: 0; }
+.note ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 3px; }
+@media (max-width: 780px) {
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: clamp(300px, 56vh, 540px) auto; height: auto; }
+  html, body { height: auto; }
+  .panel { border-left: 0; border-top: 1px solid var(--rule); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="app">
+  <div class="stage" id="stage">
+    <div class="tag" id="sceneTag">—</div>
+    <div class="hint">Тяните — поворот · колесо или щипок — масштаб</div>
+  </div>
+  <aside class="panel">
+    <div class="group">
+      <h1>Qf-нить с навесами</h1>
+      <p class="lede">Раскрытый W- или глюонный цикл, прямая нить из фотонных латчеров и поперечные навесы. Геометрия варианта (а) по ЛМ1, соседние торы — зеркала друг друга в плоскости звена. Длины — в радиусах кванта R.</p>
+      <span class="badge">Эскиз для согласования с Автором · [Г] · не канон</span>
+    </div>
+
+    <div class="group">
+      <h2>Исходная форма</h2>
+      <div class="seg presets" role="group" aria-label="Исходная форма">
+        <button type="button" id="pW" aria-pressed="true">W · 4 замкнут</button>
+        <button type="button" id="pWo" aria-pressed="false">W раскрыт + 4 навеса</button>
+        <button type="button" id="pG" aria-pressed="false">Глюон раскрыт: зародыши</button>
+        <button type="button" id="pH" aria-pressed="false">Винтовая проба</button>
+      </div>
+      <p class="sub" id="presetNote"></p>
+    </div>
+
+    <div class="group" id="openGroup">
+      <div class="slider">
+        <label for="sOpen"><h2>Раскрытие цикла</h2></label><span class="val" id="vOpen"></span>
+        <input id="sOpen" type="range" min="0" max="1" step="0.01" value="0">
+      </div>
+      <p class="sub">0 — замкнутый цикл с исходным наклоном; 1 — прямая нить: торы в одной плоскости, кольца в перпендикулярной. Узел разрыва — последний тор; его кольцо остаётся свободным.</p>
+    </div>
+
+    <div class="group">
+      <h2>Нить</h2>
+      <div class="slider"><label for="sN">Латчеров в нити</label><span class="val" id="vN"></span><input id="sN" type="range" min="2" max="16" step="1" value="4"></div>
+      <div class="slider"><label for="sTheta">Поворот следующего звена θ</label><span class="val" id="vTheta"></span><input id="sTheta" type="range" min="0" max="90" step="0.5" value="90"></div>
+      <div class="slider"><label for="sEta">Ось поворота η: 0 — изгиб в плоскости, 90° — вокруг нити</label><span class="val" id="vEta"></span><input id="sEta" type="range" min="0" max="90" step="0.5" value="0"></div>
+      <div class="slider"><label for="sBeta">Наклон оси первого тора β</label><span class="val" id="vBeta"></span><input id="sBeta" type="range" min="0" max="80" step="0.1" value="25"></div>
+      <div class="slider"><label for="sTau">Поворот оси первого тора вокруг нити τ</label><span class="val" id="vTau"></span><input id="sTau" type="range" min="-90" max="90" step="1" value="0"></div>
+      <p class="sub">Оси следующих торов не задаются: каждая — зеркало предыдущей в плоскости звена. Осевой шаг тоже не задаётся — он следует из касания торов и поворота.</p>
+    </div>
+
+    <div class="group">
+      <h2>Навесы</h2>
+      <div class="slider"><label for="sHang">Торов с навесом, от начала нити</label><span class="val" id="vHang"></span><input id="sHang" type="range" min="0" max="16" step="1" value="0"></div>
+      <div class="seg" role="group" aria-label="Сторона навеса">
+        <button type="button" data-side="alt" aria-pressed="true">чередовать ±</button>
+        <button type="button" data-side="one" aria-pressed="false">одна сторона</button>
+        <button type="button" data-side="both" aria-pressed="false">обе стороны</button>
+      </div>
+      <div class="slider"><label for="sAlpha">Наклон навеса назад α</label><span class="val" id="vAlpha"></span><input id="sAlpha" type="range" min="-60" max="85" step="0.5" value="0"></div>
+      <div class="slider"><label for="sChi">Наклон навеса вдоль оси тора-хозяина χ</label><span class="val" id="vChi"></span><input id="sChi" type="range" min="-70" max="70" step="0.5" value="0"></div>
+      <p class="sub">α = χ = 0: навес строго поперёк, его кольцо — в свободной полуплоскости под 90° к кольцам нити. α поворачивает навес вокруг оси хозяина к входящему кольцу; χ наклоняет звено навеса к оси хозяина.</p>
+    </div>
+
+    <div class="group">
+      <h2>Проверки</h2>
+      <div class="checks" aria-live="polite">
+        <div class="check"><span class="chip wait" id="cT">…</span><span>Торы не проникают друг в друга (A-5)</span><span class="num" id="nT"></span></div>
+        <div class="check"><span class="chip wait" id="cB">…</span><span>Кольца вне тел чужих торов (1D–2D)</span><span class="num" id="nB"></span></div>
+        <div class="check"><span class="chip wait" id="cK">…</span><span>Кольцо касается своих торов только в каспе (ЛМ1)</span><span class="num" id="nK"></span></div>
+        <div class="check"><span class="chip wait" id="cR">…</span><span>Кольца сходятся только в общем каспе (1D–1D)</span><span class="num" id="nR"></span></div>
+        <div class="check"><span class="chip wait" id="cA">…</span><span>Не больше трёх колец в точке отверстия (A-15)</span><span class="num" id="nA"></span></div>
+      </div>
+      <p class="sub">Числа — наименьший зазор. Для торов — расстояние между средними окружностями минус 1; для колец — до трубки тора. Касание соседних торов даёт 0.</p>
+    </div>
+
+    <dl class="read" aria-live="polite">
+      <dt>Звено d (между центрами соседних торов)</dt><dd id="rD">—</dd>
+      <dt>Осевой шаг на звено h</dt><dd id="rH">—</dd>
+      <dt>h к шагу прямой нити (2R)</dt><dd id="rHr">—</dd>
+      <dt>Радиус навивки центров торов ρ</dt><dd id="rRho">—</dd>
+      <dt>Шаг одного витка</dt><dd id="rPitch">—</dd>
+      <dt>Протяжённость фрагмента</dt><dd id="rExt">—</dd>
+      <dt>Замыкание цикла</dt><dd id="rClose">—</dd>
+      <dt>Навес: угол к исходящему кольцу нити</dt><dd id="rPsi">—</dd>
+      <dt>Навес: нормаль его кольца к оси нити</dt><dd id="rNrm">—</dd>
+      <dt>Навес: звено навеса к оси нити</dt><dd id="rCh">—</dd>
+    </dl>
+
+    <div class="toggles">
+      <label><input type="checkbox" id="tAx" checked> Оси торов</label>
+      <label><input type="checkbox" id="tSz"> Супер-Z латчеров: от центра тора к центру его кольца</label>
+      <label><input type="checkbox" id="tBad" checked> Подсвечивать нарушения</label>
+    </div>
+
+    <div class="legend">
+      <div><span class="sw box" style="background:var(--torus)"></span>тор нити</div>
+      <div><span class="sw box" style="background:var(--htorus)"></span>тор навеса</div>
+      <div><span class="sw" style="background:var(--chain)"></span>кольцо нити</div>
+      <div><span class="sw" style="background:var(--hang)"></span>кольцо навеса — продето через касп тора-хозяина</div>
+      <div><span class="sw" style="background:var(--free)"></span>свободное кольцо — не вошло в тор (место разрыва)</div>
+      <div><span class="sw" style="background:var(--tax);height:2px"></span>ось тора</div>
+      <div><span class="sw" style="background:var(--warn)"></span>элемент с нарушением</div>
+    </div>
+
+    <div class="note">
+      <p><strong>Что здесь есть и чего нет.</strong></p>
+      <ul>
+        <li>Только носители: торы, кольца, их связи. Движение не изображается. Спираль связей — не траектория бегущего состояния.</li>
+        <li>Углы 45° / 45° и половинный шаг не заданы: параметры свободны, проверки показывают, что допускает ЛМ1.</li>
+        <li>Свёртка нити в орбиту, жгут и масштабы электрона — следующий шаг, после согласования этой геометрии.</li>
+        <li>Контроль: W замыкается при d = 1,954 (β = 25°); противоположные кольца W сходятся при 50,67°; кольца глюона касаются при 71,30°; пара латчеров прямой нити занимает 5R.</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ===== Геометрия варианта (а), ЛМ1: рогатый тор a = b = 1/2, кольцо — плоский эллипс длины 2π через центры двух торов, касательный к их осям.
+// Соседние торы — зеркала друг друга в биссекторной плоскости звена (свод, п. 4.1; модель причала, п. 4.7). Единица длины R = 1.
+const QF = (function () {
+  const TWO_PI = 2 * Math.PI, A0 = 0.5, BR = 0.5;
+  const v = (x, y, z) => [x, y, z];
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const len = a => Math.hypot(a[0], a[1], a[2]);
+  const nrm = a => { const l = len(a); return l > 1e-15 ? mul(a, 1 / l) : [0, 0, 0]; };
+  const rot = (x, k, ang) => { // Rodrigues: поворот x вокруг единичной оси k
+    const c = Math.cos(ang), s = Math.sin(ang);
+    return add(add(mul(x, c), mul(cross(k, x), s)), mul(k, dot(k, x) * (1 - c)));
+  };
+  const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+
+  function perim(p, q) { const a = Math.max(p, q), b = Math.min(p, q), h = ((a - b) / (a + b)) ** 2; return Math.PI * (a + b) * (1 + 3 * h / (10 + Math.sqrt(4 - 3 * h))); }
+  // полуоси p (вдоль звена), q и сдвиг центра y0 эллипса длины 2π; cosg = |T·u|
+  function ring2D(c, cosg) {
+    let p, q, y0;
+    if (cosg < 1e-6) {
+      p = c; let lo = 1e-6, hi = 10;
+      for (let k = 0; k < 90; k++) { const m = (lo + hi) / 2; (perim(c, m) < TWO_PI ? lo = m : hi = m); }
+      q = (lo + hi) / 2; y0 = 0;
+    } else {
+      const tg = Math.sqrt(1 - cosg * cosg) / cosg, qOf = pp => tg * pp * Math.sqrt(Math.max(pp * pp / (c * c) - 1, 0));
+      let lo = c * (1 + 1e-12), hi = c * 60;
+      for (let k = 0; k < 120; k++) { const m = (lo + hi) / 2; (perim(m, qOf(m)) < TWO_PI ? lo = m : hi = m); }
+      p = (lo + hi) / 2; q = qOf(p); y0 = c * q * q / (tg * p * p);
+    }
+    const st = y0 / q, ct = c / p;
+    const rcurv = Math.pow(p * p * st * st + q * q * ct * ct, 1.5) / (p * q); // радиус кривизны в отверстии
+    return { p, q, y0, rcurv };
+  }
+  const support = u => A0 * Math.sqrt(1 - u * u) + BR;          // d = 2·h(u) для круглой трубки
+  const reflect = (T, n) => sub(T, mul(n, 2 * dot(T, n)));      // зеркало в плоскости ⊥ n
+
+  // одно звено по зеркальному правилу: из тора (A, T) вдоль направления ch
+  function link(A, T, ch) {
+    const u = nrm(ch), tu = dot(T, u), cosg = Math.min(Math.abs(tu), 0.985);
+    const d = 2 * support(cosg), A2 = add(A, mul(u, d)), T2 = nrm(reflect(T, u));
+    const r = ring2D(d / 2, cosg), M = mul(add(A, A2), 0.5);
+    let Tp = sub(T, mul(u, tu)); if (len(Tp) < 1e-9) Tp = [0, 1, 0];
+    const W = mul(nrm(Tp), tu >= 0 ? 1 : -1);
+    const C = sub(M, mul(W, r.y0));
+    return { A2, T2, d, cosg, degenerate: Math.abs(tu) > 0.985, ring: { M, u, W, C, p: r.p, q: r.q, y0: r.y0, rcurv: r.rcurv, n: nrm(cross(u, W)) } };
+  }
+  function ringPoints(rg, n) {
+    const out = [];
+    for (let k = 0; k < n; k++) { const t = k / n * TWO_PI; out.push(add(add(rg.M, mul(rg.u, rg.p * Math.cos(t))), mul(rg.W, -rg.y0 + rg.q * Math.sin(t)))); }
+    return out;
+  }
+  // точка кольца в отверстии тора-начала и касательная там
+  function holeTangent(rg) {
+    const c = rg.u, x = -Math.sqrt(Math.max(rg.p * rg.p - 0, 0));
+    const ct = -dist2(rg) / rg.p, st = rg.y0 / rg.q;
+    return nrm(add(mul(rg.u, -rg.p * st), mul(rg.W, rg.q * ct)));
+  }
+  function dist2(rg) { return rg.p > 0 ? Math.sqrt(Math.max(0, rg.p * rg.p * (1 - (rg.y0 / rg.q) ** 2))) : 0; } // = c
+
+  // ===== сборка: цепь торов и колец по последовательности направлений звеньев, навесы, свободное кольцо
+  // P: { N, theta, eta, beta, tau, closed, hangCount, hangSide: 'alt'|'one'|'both', alpha, chi }
+  function build(P) {
+    const N = P.N, th = rad(P.theta), eta = rad(P.eta);
+    const axis = nrm([0, Math.cos(eta), Math.sin(eta)]);              // ось изгиба / навивки
+    let T0 = nrm([0, Math.cos(rad(P.beta)), Math.sin(rad(P.beta))]);    // ось первого тора: наклон β к направлению нити
+    T0 = rot(T0, [0, 0, 1], rad(P.tau));
+    let ch = rot([0, 0, 1], axis, -th / 2);                             // первое звено
+    const tori = [], rings = [], links = [];
+    let A = [0, 0, 0], T = T0;
+    tori.push({ A, T, kind: 'chain', idx: 0 });
+    for (let k = 0; k < N; k++) {
+      const L = link(A, T, ch); links.push(L);
+      const last = k === N - 1;
+      rings.push({ ...L.ring, kind: last && !P.closed ? 'free' : 'chain', ends: [k, last ? (P.closed ? 0 : -1) : k + 1], owner: k, d: L.d, cosg: L.cosg, degenerate: L.degenerate });
+      A = L.A2; T = L.T2;
+      if (!last) tori.push({ A, T, kind: 'chain', idx: k + 1 });
+      ch = rot(ch, axis, -th);
+    }
+    const closeGap = len(sub(A, tori[0].A)), closeAxis = Math.abs(Math.abs(dot(T, tori[0].T)) - 1);
+    const closedOK = P.closed && closeGap < 2e-3 && closeAxis < 2e-3;
+    if (P.closed && !closedOK) { const r = rings[N - 1]; r.kind = 'free'; r.ends = [N - 1, -1]; }
+    // навесы: по одному латчеру на тор (или по два при «обе стороны»)
+    const nChain = tori.length, hang = [];
+    for (let k = 0; k < Math.min(P.hangCount, nChain); k++) {
+      const host = tori[k], out = rings[k];                 // исходящее кольцо тора k
+      const e1 = host.T, toC = sub(out.C, host.A);
+      const e2 = nrm(sub(toC, mul(e1, dot(toC, e1)))), e3 = nrm(cross(e1, e2));
+      const sides = P.hangSide === 'both' ? [1, -1] : [P.hangSide === 'alt' ? (k % 2 === 0 ? 1 : -1) : 1];
+      for (const s of sides) {
+        const hp = sub(mul(e3, s * Math.cos(rad(P.alpha))), mul(e2, Math.sin(rad(P.alpha))));
+        const chh = nrm(add(mul(hp, Math.cos(rad(P.chi))), mul(e1, Math.sin(rad(P.chi)))));
+        const L = link(host.A, host.T, chh);
+        const ti = tori.length;
+        tori.push({ A: L.A2, T: L.T2, kind: 'hang', host: k, side: s });
+        rings.push({ ...L.ring, kind: 'hang', ends: [k, ti], owner: ti, d: L.d, cosg: L.cosg, degenerate: L.degenerate, side: s });
+        hang.push({ host: k, side: s, psiOut: deg(Math.acos(Math.max(-1, Math.min(1, dot(nrm(sub(chh, mul(e1, dot(chh, e1)))), e2))))) });
+      }
+    }
+    return { P, tori, rings, links, closeGap, closedOK, nChain, hang, axis };
+  }
+
+  // ===== проверки
+  const SEC = 64, RS = 240;
+  function circlePts(A, T, n) { // средняя окружность тора (радиус 1/2)
+    let a = Math.abs(T[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+    const e1 = nrm(cross(T, a)), e2 = cross(T, e1), out = [];
+    for (let k = 0; k < n; k++) { const t = k / n * TWO_PI; out.push(add(A, add(mul(e1, 0.5 * Math.cos(t)), mul(e2, 0.5 * Math.sin(t))))); }
+    return out;
+  }
+  function distToMid(X, A, T) { const r = sub(X, A), z = dot(r, T), rho = len(sub(r, mul(T, z))); return Math.hypot(rho - 0.5, z); }
+  function check(g) {
+    const { tori, rings } = g, res = { torus: { min: Infinity, pair: null, bad: [] }, ringBody: { min: Infinity, bad: [] }, cusp: { min: Infinity, bad: [] }, ringRing: { min: Infinity, bad: [] }, a15: [], a15bad: [] };
+    // 1) тор — тор: средние окружности не ближе 1 (тела-трубки радиуса 1/2)
+    const mids = tori.map(t => circlePts(t.A, t.T, SEC));
+    for (let i = 0; i < tori.length; i++) for (let j = i + 1; j < tori.length; j++) {
+      if (len(sub(tori[i].A, tori[j].A)) > 2.05) continue;
+      let m = Infinity; for (const X of mids[i]) m = Math.min(m, distToMid(X, tori[j].A, tori[j].T));
+      const gap = m - 1;
+      if (gap < res.torus.min) { res.torus.min = gap; res.torus.pair = [i, j]; }
+      if (gap < -2e-3) res.torus.bad.push([i, j, gap]);
+    }
+    // 2) кольцо вне тел чужих торов; 3) у своих торов — касание только в каспе
+    const pts = rings.map(r => ringPoints(r, RS));
+    rings.forEach((r, ri) => {
+      const own = r.ends.filter(e => e >= 0);
+      tori.forEach((t, ti) => {
+        if (len(sub(t.A, r.M)) > Math.max(r.p, r.q) + r.y0 + 1.1) return;
+        const isOwn = own.includes(ti);
+        let m = Infinity;
+        for (const X of pts[ri]) { if (isOwn && len(sub(X, t.A)) < 0.12) continue; m = Math.min(m, distToMid(X, t.A, t.T) - 0.5); }
+        if (isOwn) { res.cusp.min = Math.min(res.cusp.min, m); if (m < -2e-3) res.cusp.bad.push([ri, ti, m]); }
+        else { res.ringBody.min = Math.min(res.ringBody.min, m); if (m < -2e-3) res.ringBody.bad.push([ri, ti, m]); }
+      });
+    });
+    // 4) кольцо — кольцо (1D–1D): общие точки только в общем каспе
+    const coarse = rings.map(r => ringPoints(r, 72));
+    const rad2 = rings.map(r => Math.max(r.p, r.q) + r.y0);
+    for (let i = 0; i < rings.length; i++) for (let j = i + 1; j < rings.length; j++) {
+      const ri = rings[i], rj = rings[j];
+      if (len(sub(ri.C, rj.C)) > rad2[i] + rad2[j] + 0.2) continue;
+      const shared = ri.ends.filter(e => e >= 0 && rj.ends.includes(e)).map(e => tori[e].A);
+      const far = X => !shared.some(S => len(sub(X, S)) < 0.25);
+      let m = Infinity;
+      for (const X of coarse[i]) { if (!far(X)) continue; for (const Y of coarse[j]) { const dd = len(sub(X, Y)); if (dd < m) m = dd; } }
+      if (m < 0.15) { m = Infinity; for (const X of pts[i]) { if (!far(X)) continue; for (const Y of pts[j]) { const dd = len(sub(X, Y)); if (dd < m) m = dd; } } }
+      if (m < res.ringRing.min) res.ringRing.min = m;
+      if (m < 0.01) res.ringRing.bad.push([i, j, m]);
+    }
+    // 5) A-15: не больше трёх колец в точке отверстия
+    tori.forEach((t, ti) => { const n = rings.filter(r => r.ends.includes(ti)).length; res.a15.push(n); if (n > 3) res.a15bad.push(ti); });
+    return res;
+  }
+  // ===== описание винтовой формы по торам нити
+  function helixInfo(g) {
+    const ch = g.tori.filter(t => t.kind === 'chain');
+    const a = g.axis, th = rad(g.P.theta);
+    const ds = g.rings.filter(r => r.kind !== 'hang').map(r => r.d);
+    const dAvg = ds.reduce((s, x) => s + x, 0) / ds.length;
+    const steps = []; for (let k = 0; k + 1 < ch.length; k++) steps.push(dot(sub(ch[k + 1].A, ch[k].A), a));
+    if (g.P.closed && g.closedOK) steps.push(dot(sub(ch[0].A, ch[ch.length - 1].A), a));
+    let h = steps.length ? steps.reduce((s, x) => s + x, 0) / steps.length : 0;
+    if (th <= 1e-6) h = dAvg;
+    const trans = Math.sqrt(Math.max(dAvg * dAvg - h * h, 0));
+    const rho = th > 1e-6 ? trans / (2 * Math.sin(th / 2)) : 0;
+    let zmin = Infinity, zmax = -Infinity; const z0 = [0, 0, 1];
+    // протяжённость вдоль направления от первого тора к последнему элементу
+    const dir = nrm(sub(g.links[g.links.length - 1].A2, ch[0].A));
+    const all = []; g.tori.forEach(t => all.push(...circlePts(t.A, t.T, 32).map(X => add(X, mul(sub(X, t.A), 1)))));
+    g.rings.forEach(r => all.push(...ringPoints(r, 96)));
+    all.forEach(X => { const s = dot(X, dir); zmin = Math.min(zmin, s); zmax = Math.max(zmax, s); });
+    return { dAvg, dMin: Math.min(...ds), dMax: Math.max(...ds), h, rho, pitch: th > 1e-6 ? h * TWO_PI / th : Infinity, extent: zmax - zmin, dir };
+  }
+  return { build, check, helixInfo, ringPoints, circlePts, link, holeTangent, v, add, sub, mul, dot, cross, len, nrm, rot, rad, deg };
+})();
+
+(function () {
+  const $ = id => document.getElementById(id);
+  const fmt = (x, d = 3) => Number.isFinite(x) ? x.toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—';
+  const fdeg = (x, d = 1) => fmt(x, d) + '°';
+  const V3 = a => new THREE.Vector3(a[0], a[1], a[2]);
+
+  // ---------- состояние и заготовки ----------
+  const PRESETS = {
+    pW:  { N: 4,  cycle: true,  baseTheta: 90, baseBeta: 25, open: 0, eta: 0, tau: 0, hangCount: 0, hangSide: 'alt', alpha: 0, chi: 0,
+           note: 'Замкнутый W: четыре латчера, наклон торов β = 25° (свобода наклона W — до 50,67°). Ведите «Раскрытие» вправо — цикл разомкнётся у последнего тора и выпрямится.' },
+    pWo: { N: 4,  cycle: true,  baseTheta: 90, baseBeta: 25, open: 1, eta: 0, tau: 0, hangCount: 4, hangSide: 'alt', alpha: 0, chi: 0,
+           note: 'W раскрыт и выпрямлен: торы в одной плоскости, кольца — в перпендикулярной; на каждом торе навес, стороны чередуются. Последнее кольцо свободно.' },
+    pG:  { N: 8,  cycle: true,  baseTheta: 45, baseBeta: 65, open: 1, eta: 0, tau: 0, hangCount: 4, hangSide: 'alt', alpha: 0, chi: 0,
+           note: 'Разорванный глюон из окна (β = 65°), выпрямленный: на первых четырёх торах навесы («зародыш нейтрино»), остальные четыре — голая нить («зародыш фотона»).' },
+    pH:  { N: 12, cycle: false, baseTheta: 45, baseBeta: 0,  open: 0, eta: 60, tau: 0, hangCount: 12, hangSide: 'alt', alpha: 0, chi: 0,
+           theta: 45, beta: 0,
+           note: 'Пример для пробы, не результат: каждое следующее звено повёрнуто на θ вокруг наклонной оси η — центры торов ложатся на винтовую линию. Подбирайте θ, η, β и наклоны навесов и смотрите проверки.' }
+  };
+  const state = {};
+  function applyPreset(key) {
+    const p = PRESETS[key];
+    Object.assign(state, { preset: key, N: p.N, cycle: p.cycle, baseTheta: p.baseTheta, baseBeta: p.baseBeta, open: p.open, eta: p.eta, tau: p.tau,
+      hangCount: p.hangCount, hangSide: p.hangSide, alpha: p.alpha, chi: p.chi });
+    if (p.cycle) { state.theta = p.baseTheta * (1 - p.open); state.beta = p.baseBeta * (1 - p.open); }
+    else { state.theta = p.theta; state.beta = p.beta; }
+    ['pW', 'pWo', 'pG', 'pH'].forEach(k => $(k).setAttribute('aria-pressed', String(k === key)));
+    $('presetNote').textContent = p.note;
+    $('openGroup').hidden = !p.cycle;
+    syncInputs(); rebuild(true);
+  }
+  function closedRequested() { return state.cycle && state.open === 0 && Math.abs(state.theta - 360 / state.N) < 0.01; }
+  function params() {
+    return { N: state.N, theta: state.theta, eta: state.eta, beta: state.beta, tau: state.tau, closed: closedRequested(),
+      hangCount: state.hangCount, hangSide: state.hangSide, alpha: state.alpha, chi: state.chi };
+  }
+
+  // ---------- ввод ----------
+  const sliders = [
+    ['sOpen', 'open', v => fmt(v, 2)], ['sN', 'N', v => String(v)], ['sTheta', 'theta', v => fdeg(v)], ['sEta', 'eta', v => fdeg(v)],
+    ['sBeta', 'beta', v => fdeg(v)], ['sTau', 'tau', v => fdeg(v, 0)], ['sHang', 'hangCount', v => String(v)],
+    ['sAlpha', 'alpha', v => fdeg(v)], ['sChi', 'chi', v => fdeg(v)]
+  ];
+  function syncInputs() {
+    $('sHang').max = state.N;
+    if (state.hangCount > state.N) state.hangCount = state.N;
+    sliders.forEach(([id, key, f]) => { $(id).value = state[key]; $('v' + id.slice(1)).textContent = f(state[key]); });
+    document.querySelectorAll('[data-side]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.side === state.hangSide)));
+  }
+  sliders.forEach(([id, key]) => {
+    $(id).addEventListener('input', e => {
+      const v = Number(e.target.value);
+      if (key === 'open') { state.open = v; state.theta = state.baseTheta * (1 - v); state.beta = state.baseBeta * (1 - v); }
+      else if (key === 'N') {
+        state.N = v;
+        if (state.cycle) { state.baseTheta = 360 / v; state.theta = state.baseTheta * (1 - state.open); }
+      }
+      else state[key] = v;
+      syncInputs(); rebuild(key === 'N');
+    });
+  });
+  document.querySelectorAll('[data-side]').forEach(b => b.addEventListener('click', () => { state.hangSide = b.dataset.side; syncInputs(); rebuild(false); }));
+  ['pW', 'pWo', 'pG', 'pH'].forEach(k => $(k).addEventListener('click', () => applyPreset(k)));
+  ['tAx', 'tSz', 'tBad'].forEach(id => $(id).addEventListener('change', () => { draw(lastG, false); paintChecks(); }));
+
+  // ---------- сцена ----------
+  const stage = $('stage');
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  stage.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 500);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = false;
+  controls.addEventListener('change', render);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x445055, 0.85));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(5, 8, 6); scene.add(sun);
+  let group = new THREE.Group(); scene.add(group);
+
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#888';
+  const mats = {
+    torus: new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.32, roughness: 0.6, depthWrite: false, side: THREE.DoubleSide }),
+    htorus: new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.36, roughness: 0.6, depthWrite: false, side: THREE.DoubleSide }),
+    badTorus: new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.55, roughness: 0.6, depthWrite: false, side: THREE.DoubleSide }),
+    chain: new THREE.MeshStandardMaterial({ roughness: 0.4 }), hang: new THREE.MeshStandardMaterial({ roughness: 0.4 }),
+    free: new THREE.MeshStandardMaterial({ roughness: 0.4 }), badRing: new THREE.MeshStandardMaterial({ roughness: 0.4 }),
+    tax: new THREE.LineBasicMaterial({}), sz: new THREE.MeshBasicMaterial({})
+  };
+  function refreshColors() {
+    mats.torus.color.set(css('--torus')); mats.htorus.color.set(css('--htorus')); mats.badTorus.color.set(css('--warn'));
+    mats.chain.color.set(css('--chain')); mats.hang.color.set(css('--hang')); mats.free.color.set(css('--free')); mats.badRing.color.set(css('--warn'));
+    mats.tax.color.set(css('--tax')); mats.sz.color.set(css('--muted'));
+    renderer.setClearColor(new THREE.Color(css('--bg')), 1);
+    render();
+  }
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshColors);
+  new MutationObserver(refreshColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] });
+
+  const torusGeo = new THREE.TorusGeometry(0.5, 0.5, 40, 120);
+  const qFromZ = d => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.clone().normalize());
+  let lastG = null, lastC = null, toriMeshes = [], ringMeshes = [];
+
+  function disposeGroup(g) { g.traverse(o => { if (o.geometry && o.geometry !== torusGeo) o.geometry.dispose(); }); scene.remove(g); }
+  function draw(g, fit) {
+    disposeGroup(group); group = new THREE.Group(); scene.add(group); toriMeshes = []; ringMeshes = [];
+    const showAx = $('tAx').checked, showSz = $('tSz').checked;
+    g.tori.forEach(t => {
+      const m = new THREE.Mesh(torusGeo, t.kind === 'hang' ? mats.htorus : mats.torus);
+      m.position.copy(V3(t.A)); m.quaternion.copy(qFromZ(V3(t.T))); group.add(m); toriMeshes.push(m);
+      if (showAx) {
+        const a = V3(t.A), d = V3(t.T).multiplyScalar(0.85);
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a.clone().sub(d), a.clone().add(d)]), mats.tax));
+      }
+    });
+    g.rings.forEach(r => {
+      const pts = QF.ringPoints(r, 360).map(V3);
+      const curve = new THREE.CatmullRomCurve3(pts, true);
+      const mat = r.kind === 'hang' ? mats.hang : r.kind === 'free' ? mats.free : mats.chain;
+      const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 360, r.kind === 'free' ? 0.016 : 0.022, 8, true), mat);
+      group.add(m); ringMeshes.push(m);
+    });
+    if (showSz) {
+      g.rings.forEach(r => {
+        const t = g.tori[r.owner]; if (!t) return;
+        const from = V3(t.A), to = V3(r.C), dir = to.clone().sub(from), L = dir.length();
+        if (L < 1e-6) return;
+        const arrow = new THREE.ArrowHelper(dir.normalize(), from, L, mats.sz.color.getHex(), 0.14, 0.08);
+        group.add(arrow);
+      });
+    }
+    if (fit) fitCamera(g);
+    render();
+  }
+  function fitCamera(g) {
+    const box = new THREE.Box3(); g.tori.forEach(t => box.expandByPoint(V3(t.A)));
+    g.rings.forEach(r => box.expandByPoint(V3(r.C)));
+    const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()).length() / 2 + 2.2;
+    controls.target.copy(c);
+    const dir = new THREE.Vector3(1.0, 0.75, 0.9).normalize();
+    camera.position.copy(c.clone().add(dir.multiplyScalar(s / Math.tan(THREE.MathUtils.degToRad(19)))));
+    camera.near = 0.05; camera.far = s * 40; camera.updateProjectionMatrix(); controls.update();
+  }
+  function render() { renderer.render(scene, camera); }
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight || 400;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); render();
+  }
+  window.addEventListener('resize', resize);
+
+  // ---------- проверки и показания ----------
+  let checkTimer = 0;
+  function setChip(id, ok, text) { const el = $(id); el.className = 'chip ' + (ok === null ? 'wait' : ok ? 'ok' : 'bad'); el.textContent = text; }
+  function paintChecks() {
+    const c = lastC, g = lastG; if (!c || !g) return;
+    const showBad = $('tBad').checked;
+    toriMeshes.forEach((m, i) => m.material = g.tori[i].kind === 'hang' ? mats.htorus : mats.torus);
+    ringMeshes.forEach((m, i) => { const k = g.rings[i].kind; m.material = k === 'hang' ? mats.hang : k === 'free' ? mats.free : mats.chain; });
+    if (showBad) {
+      c.torus.bad.forEach(([i, j]) => { toriMeshes[i].material = mats.badTorus; toriMeshes[j].material = mats.badTorus; });
+      c.a15bad.forEach(i => toriMeshes[i].material = mats.badTorus);
+      c.ringBody.bad.forEach(([ri]) => ringMeshes[ri].material = mats.badRing);
+      c.cusp.bad.forEach(([ri]) => ringMeshes[ri].material = mats.badRing);
+      c.ringRing.bad.forEach(([i, j]) => { ringMeshes[i].material = mats.badRing; ringMeshes[j].material = mats.badRing; });
+    }
+    render();
+  }
+  function runChecks() {
+    const g = lastG; const c = QF.check(g); lastC = c;
+    const n = x => Number.isFinite(x) ? fmt(x, 3) : 'нет пар';
+    setChip('cT', c.torus.bad.length === 0, c.torus.bad.length ? 'нет' : 'да'); $('nT').textContent = n(c.torus.min);
+    setChip('cB', c.ringBody.bad.length === 0, c.ringBody.bad.length ? 'нет' : 'да'); $('nB').textContent = n(c.ringBody.min);
+    setChip('cK', c.cusp.bad.length === 0, c.cusp.bad.length ? 'нет' : 'да'); $('nK').textContent = n(c.cusp.min);
+    setChip('cR', c.ringRing.bad.length === 0, c.ringRing.bad.length ? 'нет' : 'да'); $('nR').textContent = n(c.ringRing.min);
+    const maxA = Math.max(...c.a15);
+    setChip('cA', c.a15bad.length === 0, c.a15bad.length ? 'нет' : 'да'); $('nA').textContent = 'макс. ' + maxA;
+    paintChecks();
+  }
+  function readouts(g) {
+    const h = QF.helixInfo(g);
+    $('rD').textContent = Math.abs(h.dMax - h.dMin) < 5e-4 ? fmt(h.dAvg) : fmt(h.dMin) + ' … ' + fmt(h.dMax);
+    const closed = g.P.closed && g.closedOK;
+    $('rH').textContent = closed ? '0 (цикл)' : fmt(h.h);
+    $('rHr').textContent = closed ? '—' : fmt(h.h / 2);
+    $('rRho').textContent = g.P.theta > 1e-6 ? fmt(h.rho) : '—';
+    $('rPitch').textContent = (!closed && g.P.theta > 1e-6 && Math.abs(h.h) > 1e-6) ? fmt(h.pitch, 2) : '—';
+    $('rExt').textContent = closed ? '—' : fmt(h.extent, 2) + ' R';
+    $('rClose').textContent = !state.cycle ? 'разомкнута' : g.P.closed ? (g.closedOK ? 'замкнут' : 'не замыкается, зазор ' + fmt(g.closeGap)) : 'разомкнут';
+    const hg = g.rings.find(r => r.kind === 'hang');
+    if (hg) {
+      const host = g.tori[hg.ends[0]], out = g.rings[hg.ends[0]];
+      const ax = out.u, ang = (a, b) => QF.deg(Math.acos(Math.max(-1, Math.min(1, QF.dot(QF.nrm(a), QF.nrm(b))))));
+      $('rPsi').textContent = fdeg(g.hang[0].psiOut);
+      const nAng = ang(hg.n, ax); $('rNrm').textContent = fdeg(Math.min(nAng, 180 - nAng));
+      $('rCh').textContent = fdeg(ang(hg.u, ax));
+    } else ['rPsi', 'rNrm', 'rCh'].forEach(id => $(id).textContent = '—');
+    const hangs = g.rings.filter(r => r.kind === 'hang').length;
+    let tag = state.cycle && g.P.closed && g.closedOK ? (state.N === 4 ? 'W · 4 · замкнут' : state.N === 8 ? 'Глюон · 8 · замкнут' : 'Цикл · ' + state.N) : 'Нить · ' + state.N + ' латч.';
+    tag += ' · β ' + fdeg(state.beta, 0) + (hangs ? ' · навесов ' + hangs : '');
+    $('sceneTag').textContent = tag;
+  }
+  function rebuild(fit) {
+    const g = QF.build(params()); lastG = g; lastC = null;
+    draw(g, fit); readouts(g);
+    ['cT', 'cB', 'cK', 'cR', 'cA'].forEach(id => setChip(id, null, '…'));
+    clearTimeout(checkTimer); checkTimer = setTimeout(runChecks, 160);
+  }
+
+  // ---------- старт ----------
+  resize(); refreshColors();
+  applyPreset('pW');
+  new ResizeObserver(resize).observe(stage);
+})();
+</script>
