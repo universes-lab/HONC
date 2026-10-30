@@ -191,7 +191,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
       <div class="slider"><label for="sAxT">Ось поворота: наклон от Z</label><span class="val" id="vAxT"></span><input id="sAxT" type="range" min="0" max="90" step="1" value="0"></div>
       <div class="slider"><label for="sAxP">Ось поворота: направление наклона, 0° — к X, 90° — к Y</label><span class="val" id="vAxP"></span><input id="sAxP" type="range" min="0" max="359" step="1" value="0"></div>
       <div class="slider" id="gStep"><label for="sStep">Сдвиг за кадр вдоль своей Z, R</label><span class="val" id="vStep"></span><input id="sStep" type="range" min="0" max="2" step="0.05" value="1"></div>
-      <div class="row" id="gLink" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="btn" id="linkBtn" style="font:inherit;font-size:13px;padding:5px 10px;border-radius:6px;border:1px solid var(--rule);background:var(--chip);color:var(--fg);cursor:pointer">Связать: Δφ = α</button><span class="sub">кандидат правила перехода Sᵢ(t) → Sᵢ₊₁(t + 1) [Г]</span></div>
+      <div class="row" id="gLink" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="btn" id="linkBtn" style="font:inherit;font-size:13px;padding:5px 10px;border-radius:6px;border:1px solid var(--rule);background:var(--chip);color:var(--fg);cursor:pointer">Связать: Δφ = α, шаг кадров 2R</button><span class="sub">ручная настройка обоих параметров; проверка формы правила Sᵢ₊₁(t) = T[Sᵢ(t − τ)] [Г], не найденное соответствие</span></div>
       <p class="shape" id="fshape">—</p>
       <dl class="read" aria-live="polite">
         <dt>След центра</dt><dd id="fC">—</dd>
@@ -213,7 +213,7 @@ dl.read dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tab
         <li>Правила звена — кандидаты [Г]: «пара тор + навес» — исходящее звено идёт по сумме супер-Z латчера и навеса (Автор); «+ входящий» — ещё и супер-Z входящего латчера (гипотеза Г-Б1, равные веса). Веса не выведены.</li>
         <li>Кольца — эллипсы ЛМ1. Форма кольца — выбор модели; закон, который её выбирает, открыт.</li>
         <li>«Кадры одного латчера» — последовательные ориентации одного латчера на одном изображении (мультиэкспозиция). Правило кадра выбрано условно; это не установленное движение. Прямые оси кадров и кривые следы их концов — разные вещи.</li>
-        <li>«Снимок цепочки» — оси состояний латчеров в один момент; фазы назначены условно, φᵢ = i·Δφ. Закона их согласования нет; носители не перестраиваются.</li>
+        <li>«Снимок цепочки» — латчеры в один момент; фазы назначены условно, φᵢ = i·Δφ. Серые оси — оси носителей по J5, цветные — назначенная ориентация. Где они расходятся, цветные — ориентация состояния; её отделимость от носителя открыта [О]. Совпадение снимка с кадрами получается только ручной настройкой угла и шага.</li>
       </ul>
     </div>
   </aside>
@@ -803,6 +803,17 @@ if (typeof module !== 'undefined') module.exports = QN;
         group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), M.ring));
       });
     }
+    // в снимке — оси носителей по J5 (серые): X_i = (−1)^i x̂, Y_i = (−1)^i ŷ, Z = ẑ; носители стоят
+    let agree = false;
+    if (state.mode === 'snap') {
+      const grey = matOf('--muted', 0.9); let worst = 0;
+      frames.forEach((f, i) => {
+        const sg = i % 2 ? -1 : 1, Xc = [sg, 0, 0], Yc = [0, sg, 0];
+        arrow(add(f.p, [0, 0, 0.04]), mul(Xc, 0.8), grey, 0.012, 0.1); arrow(add(f.p, [0, 0, 0.04]), mul(Yc, 0.8), grey, 0.012, 0.1);
+        worst = Math.max(worst, angle(f.X, Xc), angle(f.Y, Yc), angle(f.Z, [0, 0, 1]));
+      });
+      agree = worst < 0.5;
+    }
     // оси кадров
     frames.forEach((f, j) => {
       const o = fade(j);
@@ -835,8 +846,12 @@ if (typeof module !== 'undefined') module.exports = QN;
       $('fC').textContent = 'прямая: носители стоят';
       const tip = state.dphi === 0 ? 'прямая' : state.axT === 0 ? 'винт вокруг нити, r = 1,00, шаг за оборот ' + fmt(2 * 360 / Math.abs(state.dphi), 2) : state.axT === 90 ? 'трохоида в одной плоскости' : 'наклонный винт';
       $('fX').textContent = tip; $('fY').textContent = tip;
-      $('fshape').innerHTML = '<b>Фазы условные.</b> Каждому латчеру назначен поворот i·Δφ вокруг одной оси; закона, который связал бы соседей, нет. ' +
-        (state.dphi === state.alpha ? (state.axT === 0 ? 'Сейчас Δφ = α и поворот вокруг Z: снимок совпадает с кадрами одного латчера, идущего на 2R за кадр.' : 'Сейчас Δφ = α, но ось наклонена: в кадрах центр латчера уходит с прямой, а в снимке центры стоят на нити — картины не совпадают.') : '');
+      const linked = state.dphi === state.alpha && state.step === 2;
+      $('fshape').innerHTML = (agree
+          ? '<b>Цветные оси совпадают с осями носителей.</b> Поворот на 180° вокруг Z переводит прямой латчер в себя, и ориентации по J5 чередуются ровно так. Здесь показаны оси носителей, без нового свойства. '
+          : '<b>Цветные оси — ориентация состояния [О].</b> Серые — оси неподвижных носителей по J5. Отделима ли ориентация состояния от носителя, не установлено; это изображение, а не свойство латчера. ') +
+        'Фазы назначены условно, i·Δφ; закона согласования соседей нет. ' +
+        (linked ? (state.axT === 0 ? 'Кнопкой заданы Δφ = α и шаг кадров 2R, ось — Z: снимок повторяет кадры одного латчера. Это совпадение задано вручную, а не найдено.' : 'Кнопкой заданы Δφ = α и шаг кадров 2R, но ось наклонена: в кадрах центр уходит с прямой, в снимке центры стоят на нити — картины не совпадают.') : '');
     }
     if (fit) { const box = new THREE.Box3(); frames.forEach(f => { box.expandByPoint(V3(f.p)); box.expandByPoint(V3(add(f.p, f.X))); box.expandByPoint(V3(add(f.p, f.Y))); });
       const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()).length() / 2 + 2.2; controls.target.copy(c);
@@ -851,7 +866,7 @@ if (typeof module !== 'undefined') module.exports = QN;
       .forEach(([id, k, f]) => { $(id).value = state[k]; $('v' + id.slice(1)).textContent = f(state[k]); });
     $('frameNote').textContent = multi
       ? 'Мультиэкспозиция: последовательные ориентации одного латчера на одном изображении. Правило кадра — сдвиг вдоль своей Z и поворот на α вокруг выбранной оси — выбрано условно; это не установленное движение. Ранние кадры бледнее.'
-      : 'Снимок цепочки в один момент: латчеры стоят на прямой нити с шагом 2R, каждому назначен свой поворот i·Δφ. Показаны оси состояний, носители не перестраиваются. Закона согласования фаз нет.';
+      : 'Снимок цепочки в один момент: латчеры стоят на прямой нити с шагом 2R, каждому назначен свой поворот i·Δφ. Серые оси — оси носителей по J5; цветные — назначенная ориентация. Если они расходятся, цветные изображают ориентацию состояния, отделимость которой от носителя открыта [О]. Закона согласования фаз нет.';
     $('sceneTag').textContent = multi ? `Кадры одного латчера · ${state.K} кадров · α ${fdeg(state.alpha, 0)}` : `Снимок цепочки · ${state.N5} латчеров · Δφ ${fdeg(state.dphi, 0)} (условно)`;
   }
   function setMode(m, fit) {
@@ -865,7 +880,7 @@ if (typeof module !== 'undefined') module.exports = QN;
   [['sK', 'K', true], ['sN5', 'N5', true], ['sAlpha', 'alpha', false], ['sDphi', 'dphi', false], ['sAxT', 'axT', false], ['sAxP', 'axP', false], ['sStep', 'step', false]]
     .forEach(([id, k, refit]) => $(id).addEventListener('input', e => { state[k] = +e.target.value; frameSync(); drawFrames(refit); }));
   ['fTr', 'fCar'].forEach(id => $(id).addEventListener('change', () => drawFrames(false)));
-  $('linkBtn').addEventListener('click', () => { state.dphi = state.alpha; frameSync(); drawFrames(false); });
+  $('linkBtn').addEventListener('click', () => { state.dphi = state.alpha; state.step = 2; frameSync(); drawFrames(false); });
 
   // ---------- управление ----------
   const NOTES = {
